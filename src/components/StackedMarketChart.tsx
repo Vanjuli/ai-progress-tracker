@@ -36,19 +36,24 @@ export function StackedMarketChart({ fields, metrics, height = 300 }: Props) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: 4 }}>
-        <CartesianGrid stroke="#262c3a" strokeDasharray="3 3" />
-        <XAxis dataKey="year" stroke="#9aa3b2" fontSize={12} />
+        <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
+        <XAxis dataKey="year" stroke="var(--chart-axis)" fontSize={12} />
         <YAxis
-          stroke="#9aa3b2"
+          stroke="var(--chart-axis)"
           fontSize={12}
           width={52}
           tickFormatter={(v: number) => formatUsdBillions(v)}
         />
         <Tooltip
-          contentStyle={{ background: "#141821", border: "1px solid #262c3a", borderRadius: 8 }}
+          contentStyle={{
+            background: "var(--bg-elev)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            color: "var(--text)",
+          }}
           formatter={(value: number, name: string) => [formatUsdBillions(value), name]}
         />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Legend wrapperStyle={{ color: "var(--text-dim)", fontSize: 12 }} />
         {fields.map((f) => (
           <Area
             key={f.id}
