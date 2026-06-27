@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Field, FieldMetric } from "../lib/types";
-import { fieldSeries, growthPct, latestValue, startYear } from "../lib/metrics";
+import { fieldSeries, growthPct, isYearToDate, latestValue, startYear } from "../lib/metrics";
 import { formatGrowth, formatUsdBillions } from "../lib/format";
 import { MetricArea } from "./MetricArea";
 
@@ -8,7 +8,9 @@ export function FieldOverviewCard({ field, metrics }: { field: Field; metrics: F
   const market = fieldSeries(metrics, field.id, "market_value");
   const pop = fieldSeries(metrics, field.id, "popularity");
   const netWorth = latestValue(market);
-  const popGrowth = growthPct(pop);
+  const popGrowth = growthPct(pop, { excludeYearToDate: true });
+  const popLatestPoint = pop[pop.length - 1] ?? null;
+  const popLatestYtd = popLatestPoint ? isYearToDate(popLatestPoint.period) : false;
   const since = startYear(pop);
 
   return (
@@ -39,8 +41,10 @@ export function FieldOverviewCard({ field, metrics }: { field: Field; metrics: F
           </span>
         </div>
       </div>
-      <MetricArea series={pop} color={field.color} height={68} compact />
-      <span className="small muted">Usage trend since {since ?? "—"}</span>
+      <MetricArea series={pop} color={field.color} height={68} compact markYearToDate />
+      <span className="small muted">
+        Usage trend since {since ?? "—"}{popLatestYtd ? " · current year YTD" : ""}
+      </span>
     </Link>
   );
 }

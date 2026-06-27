@@ -6,6 +6,7 @@ import {
   startYear,
   sumByPeriod,
   cagrPct,
+  isYearToDate,
 } from "../src/lib/metrics";
 
 const series = [
@@ -51,5 +52,26 @@ describe("series helpers", () => {
       { period: "2020-01-01", value: 11 },
       { period: "2021-01-01", value: 22 },
     ]);
+  });
+
+  it("identifies current-year data points as year-to-date", () => {
+    const now = new Date("2026-06-27T12:00:00Z");
+
+    expect(isYearToDate("2026-01-01", now)).toBe(true);
+    expect(isYearToDate("2026-12-31", now)).toBe(true);
+    expect(isYearToDate("2025-01-01", now)).toBe(false);
+    expect(isYearToDate("not-a-date", now)).toBe(false);
+  });
+
+  it("can exclude the current year from growth calculations", () => {
+    const now = new Date("2026-06-27T12:00:00Z");
+    const withPartialYear = [
+      { period: "2024-01-01", value: 100 },
+      { period: "2025-01-01", value: 200 },
+      { period: "2026-01-01", value: 80 },
+    ];
+
+    expect(growthPct(withPartialYear)).toBe(-20);
+    expect(growthPct(withPartialYear, { excludeYearToDate: true, now })).toBe(100);
   });
 });
