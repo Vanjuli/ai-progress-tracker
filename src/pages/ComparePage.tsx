@@ -1,0 +1,94 @@
+import { useEffect, useMemo, useState } from "react";
+import { api } from "../lib/api";
+import { useAsync } from "../lib/useAsync";
+import { MultiLineChart } from "../components/MultiLineChart";
+import { MetricKey } from "../lib/types";
+import { formatUsdBillions } from "../lib/format";
+
+export function ComparePage() {
+  const fields = useAsync(() => api.getFields(), []);
+  const metrics = useAsync(() => api.getFieldMetrics(), []);
+  const [metricKey, setMetricKey] = useState<MetricKey>("market_value");
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+
+  const fieldList = fields.data ?? [];
+  const metricList = metrics.data ?? [];
+  const forMetric = useMemo(
+    () => metricList.filter((m) => m.metric_key === metricKey),
+    [metricList, metricKey]
+  );
+  const availableFields = useMemo(
+    () => fieldList.filter((f) => forMetric.some((m) => m.field_id === f.id)),
+    [fieldList, forMetric]
+  );
+
+  // Default to all fields that have data for the selected metric.
+  useEffect(() => {
+    const next: Record<string, boolean> = {};
+    for (const f of availableFields) next[f.id] = true;
+    setSelected(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metricKey, metrics.data, fields.data]);
+
+  const selectedFields = availableFields.filter((f) => selected[f.id]);
+  const fmt =
+    metricKey === "market_value"
+      ? (v: number) => formatUsdBillions(v)
+      : (v: number) => v.toLocaleString();
+
+  return (
+    <>
+      <section className="hero" style={{ paddingBottom: 12 }}>
+        <h1>Compare fields</h1>
+        <p>
+          Overlay AI fields on one chart to compare how their market value or research
+          activity has grown over time.
+        </p>
+      </section>
+
+      <div className="row" style={{ gap: 8, marginBottom: 14 }}>
+        <button
+          className={`btn ${metricKey === "market_value" ? "btn-primary" : ""}`}
+          onClick={() => setMetricKey("market_value")}
+        >
+          Market value
+        </button>
+        <button
+          className={`btn ${metricKey === "popularity" ? "btn-primary" : ""}`}
+          onClick={() => setMetricKey("popularity")}
+        >
+          Popularity
+        </button>
+      </div>
+
+      <div className="row" style={{ gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
+        {availableFields.map((f) => (
+          <label key={f.id} className="row" style={{ gap: 6, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={!!selected[f.id]}
+              onChange={(e) => setSelected((s) => ({ ...s, [f.id]: e.target.checked }))}
+            />
+            <span
+              style={{ width: 10, height: 10, borderRadius: "50%", background: f.color, display: "inline-block" }}
+            />
+            <span className="small">{f.name}</span>
+          </label>
+        ))}
+      </div>
+
+      <div className="card">
+        {metrics.loading ? (
+          <p className="muted">Loading…</p>
+        ) : (
+          <MultiLineChart fields={selectedFields} metrics={forMetric} valueFormatter={fmt} height={380} />
+        )}
+        <p className="small muted" style={{ marginTop: 8 }}>
+          {metricKey === "market_value"
+            ? "Market value in USD billions (Grand View Research; values from ~2026 on are forecasts)."
+            : "Annual arXiv submissions in each field's main category — a research-activity proxy."}
+        </p>
+      </div>
+    </>
+  );
+}

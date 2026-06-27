@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#f4f5fb;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1b2030;">
+    <div style="max-width:480px;margin:0 auto;padding:32px 20px;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#10b981);vertical-align:middle;"></span>
+        <span style="font-weight:800;font-size:18px;letter-spacing:-0.2px;vertical-align:middle;margin-left:8px;color:#1b2030;">AI Progress Tracker</span>
+      </div>
+      <div style="background:#ffffff;border:1px solid #e6e8f0;border-radius:14px;padding:32px;">
+        <h1 style="margin:0 0 12px;font-size:20px;color:#1b2030;">Reset your password</h1>
+        <p style="margin:0 0 24px;color:#5b6275;font-size:15px;line-height:1.5;">
+          We received a request to reset the password for your AI Progress Tracker account.
+          Click below to choose a new one. This link expires shortly.
+        </p>
+        <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#6366f1;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 24px;border-radius:10px;">Reset password &rarr;</a>
+        <p style="margin:24px 0 0;font-size:13px;color:#8a93a6;line-height:1.5;">
+          If the button doesn't work, copy and paste this link into your browser:<br />
+          <a href="{{ .ConfirmationURL }}" style="color:#6366f1;word-break:break-all;">{{ .ConfirmationURL }}</a>
+        </p>
+        <p style="margin:16px 0 0;font-size:13px;color:#8a93a6;">
+          Didn't request a password reset? You can safely ignore this email — your password won't change.
+        </p>
+      </div>
+      <p style="text-align:center;font-size:12px;color:#9aa3b2;margin-top:20px;line-height:1.6;">
+        Tracking AI progress across fields — benchmarks, market value, and research activity.<br />
+        <a href="https://aiprogresstracker.org" style="color:#9aa3b2;">aiprogresstracker.org</a>
+      </p>
+    </div>
+  </body>
+</html>
