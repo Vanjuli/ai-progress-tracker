@@ -10,6 +10,7 @@ import { Field } from "../lib/types";
 import {
   fieldSeries,
   growthPct,
+  isYearToDate,
   latestValue,
   startYear,
   sumByPeriod,
@@ -33,7 +34,10 @@ export function HomePage() {
   const totalMarket = sumByPeriod(marketSerieses);
   const totalPop = sumByPeriod(popSerieses);
   const totalMarketLatest = latestValue(totalMarket);
+  const totalPopLatestPoint = totalPop[totalPop.length - 1] ?? null;
+  const totalPopLatestYtd = totalPopLatestPoint ? isYearToDate(totalPopLatestPoint.period) : false;
   const since = startYear(totalMarket);
+  const popSince = startYear(totalPop);
 
   // Fastest-growing field by market value.
   let fastest: { name: string; growth: number } | null = null;
@@ -43,6 +47,10 @@ export function HomePage() {
   }
 
   const sinceCaption = since ? `since ${since}` : undefined;
+  const popSinceCaption = popSince ? `since ${popSince}` : undefined;
+  const popTrendCaption = totalPopLatestYtd
+    ? [popSinceCaption, "current year is YTD"].filter(Boolean).join(" · ")
+    : popSinceCaption;
 
   return (
     <>
@@ -89,11 +97,11 @@ export function HomePage() {
                 label="AI research output (arXiv papers/yr)"
                 value={
                   latestValue(totalPop) != null
-                    ? Math.round(latestValue(totalPop)!).toLocaleString()
+                    ? `${Math.round(latestValue(totalPop)!).toLocaleString()}${totalPopLatestYtd ? " YTD" : ""}`
                     : "—"
                 }
-                growth={growthPct(totalPop)}
-                caption={sinceCaption}
+                growth={growthPct(totalPop, { excludeYearToDate: true })}
+                caption={popTrendCaption}
                 valueColor="#6ee7b7"
               />
               <TrendStat

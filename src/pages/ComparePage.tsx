@@ -81,12 +81,18 @@ export function ComparePage() {
         {metrics.loading ? (
           <p className="muted">Loading…</p>
         ) : (
-          <MultiLineChart fields={selectedFields} metrics={forMetric} valueFormatter={fmt} height={380} />
+          <MultiLineChart
+            fields={selectedFields}
+            metrics={forMetric}
+            valueFormatter={fmt}
+            height={380}
+            markYearToDate={metricKey === "popularity"}
+          />
         )}
         <p className="small muted" style={{ marginTop: 8 }}>
           {metricKey === "market_value"
             ? "Market value in USD billions (Grand View Research; values from ~2026 on are forecasts)."
-            : "Annual arXiv submissions in each field's main category — a research-activity proxy."}
+            : "Annual arXiv submissions in each field's main category — a research-activity proxy. Current-year points are YTD / year to date (in progress)."}
         </p>
       </div>
     </>

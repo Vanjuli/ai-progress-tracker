@@ -3,7 +3,7 @@ import { api } from "../lib/api";
 import { useAsync } from "../lib/useAsync";
 import { BenchmarkCard } from "../components/BenchmarkCard";
 import { MetricArea } from "../components/MetricArea";
-import { fieldSeries, growthPct, latestValue, startYear } from "../lib/metrics";
+import { fieldSeries, growthPct, isYearToDate, latestValue, startYear } from "../lib/metrics";
 import { formatGrowth, formatUsdBillions } from "../lib/format";
 
 export function FieldPage() {
@@ -27,6 +27,8 @@ export function FieldPage() {
   const pop = fieldSeries(metricList, f.id, "popularity");
   const netWorth = latestValue(market);
   const popLatest = latestValue(pop);
+  const popLatestPoint = pop[pop.length - 1] ?? null;
+  const popLatestYtd = popLatestPoint ? isYearToDate(popLatestPoint.period) : false;
   const marketSource =
     metricList.find((m) => m.field_id === f.id && m.metric_key === "market_value")?.source_url ??
     null;
@@ -60,11 +62,11 @@ export function FieldPage() {
                 <span
                   className="small"
                   style={{
-                    color: (growthPct(pop) ?? 0) >= 0 ? "var(--good)" : "var(--bad)",
+                    color: (growthPct(pop, { excludeYearToDate: true }) ?? 0) >= 0 ? "var(--good)" : "var(--bad)",
                     fontWeight: 700,
                   }}
                 >
-                  {formatGrowth(growthPct(pop))} {sinceCaption}
+                  {formatGrowth(growthPct(pop, { excludeYearToDate: true }))} {sinceCaption}
                 </span>
               </div>
               <div style={{ fontSize: 26, fontWeight: 800 }}>
@@ -72,10 +74,11 @@ export function FieldPage() {
                 <span className="small muted" style={{ fontWeight: 400 }}>
                   {" "}
                   papers/yr
+                  {popLatestYtd ? " YTD" : ""}
                 </span>
               </div>
               {pop.length > 0 ? (
-                <MetricArea series={pop} color={f.color} height={200} />
+                <MetricArea series={pop} color={f.color} height={200} markYearToDate />
               ) : (
                 <p className="muted small">No distinct arXiv category for this field.</p>
               )}
@@ -85,6 +88,11 @@ export function FieldPage() {
                   <a href={popSource} target="_blank" rel="noreferrer">
                     arXiv ↗
                   </a>
+                </span>
+              )}
+              {popLatestYtd && (
+                <span className="small muted">
+                  Current-year popularity is year to date (in progress); growth excludes the partial year.
                 </span>
               )}
             </div>

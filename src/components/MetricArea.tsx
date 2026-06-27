@@ -7,7 +7,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { SeriesPoint } from "../lib/metrics";
+import { isYearToDate, SeriesPoint } from "../lib/metrics";
 import { yearOf } from "../lib/format";
 
 interface Props {
@@ -16,11 +16,13 @@ interface Props {
   height?: number;
   compact?: boolean;
   valueFormatter?: (v: number) => string;
+  markYearToDate?: boolean;
 }
 
 interface Row {
   year: number;
   value: number;
+  ytd: boolean;
 }
 
 interface TooltipProps {
@@ -35,18 +37,25 @@ function AreaTooltip({ active, payload, format }: TooltipProps) {
   return (
     <div className="card" style={{ padding: "6px 10px" }}>
       <strong>{format(row.value)}</strong>
-      <div className="small muted">{row.year}</div>
+      <div className="small muted">
+        {row.year}{row.ytd ? " YTD" : ""}
+      </div>
+      {row.ytd && <div className="small muted">year to date (in progress)</div>}
     </div>
   );
 }
 
-export function MetricArea({ series, color, height = 200, compact, valueFormatter }: Props) {
+export function MetricArea({ series, color, height = 200, compact, valueFormatter, markYearToDate }: Props) {
   const fmt = valueFormatter ?? ((v: number) => String(v));
   if (series.length === 0) return <p className="muted small">No data.</p>;
 
   const rows: Row[] = [...series]
     .sort((a, b) => a.period.localeCompare(b.period))
-    .map((p) => ({ year: yearOf(p.period), value: p.value }));
+    .map((p) => ({
+      year: yearOf(p.period),
+      value: p.value,
+      ytd: !!markYearToDate && isYearToDate(p.period),
+    }));
 
   const gradientId = `grad-${color.replace("#", "")}`;
 
@@ -61,7 +70,15 @@ export function MetricArea({ series, color, height = 200, compact, valueFormatte
         </defs>
         {!compact && <CartesianGrid stroke="#262c3a" strokeDasharray="3 3" />}
         {!compact && (
-          <XAxis dataKey="year" stroke="#9aa3b2" fontSize={12} tickFormatter={(y) => String(y)} />
+          <XAxis
+            dataKey="year"
+            stroke="#9aa3b2"
+            fontSize={12}
+            tickFormatter={(y) => {
+              const row = rows.find((r) => r.year === y);
+              return row?.ytd ? `${y} YTD` : String(y);
+            }}
+          />
         )}
         {!compact && <YAxis stroke="#9aa3b2" fontSize={12} width={46} tickFormatter={fmt} />}
         <Tooltip content={<AreaTooltip format={fmt} />} />

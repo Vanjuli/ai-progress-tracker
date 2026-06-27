@@ -35,13 +35,33 @@ export function latestValue(series: SeriesPoint[]): number | null {
   return s.length ? s[s.length - 1].value : null;
 }
 
+/** True when a yearly metric period belongs to the current calendar year. */
+export function isYearToDate(period: string, now = new Date()): boolean {
+  const date = new Date(period);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getUTCFullYear() === now.getUTCFullYear();
+}
+
+export interface GrowthOptions {
+  /** Exclude the current in-progress year so YTD data is not compared to full prior years. */
+  excludeYearToDate?: boolean;
+  now?: Date;
+}
+
+function growthSeries(series: SeriesPoint[], options?: GrowthOptions): SeriesPoint[] {
+  const sorted = sortSeries(series);
+  if (!options?.excludeYearToDate) return sorted;
+  return sorted.filter((point) => !isYearToDate(point.period, options.now));
+}
+
 /**
  * Total percentage growth from the first to the latest point.
  * Returns null when it can't be computed (empty series or a zero start).
  */
-export function growthPct(series: SeriesPoint[]): number | null {
-  const first = firstValue(series);
-  const last = latestValue(series);
+export function growthPct(series: SeriesPoint[], options?: GrowthOptions): number | null {
+  const s = growthSeries(series, options);
+  const first = firstValue(s);
+  const last = latestValue(s);
   if (first === null || last === null || first === 0) return null;
   return ((last - first) / first) * 100;
 }
