@@ -1,4 +1,5 @@
 # AI Progress Tracker
+🔗 **Live site:** https://aiprogresstracker.org
 
 Track how AI advances across fields through **benchmark charts over time**, built
 from data the community **submits and verifies by voting**.
