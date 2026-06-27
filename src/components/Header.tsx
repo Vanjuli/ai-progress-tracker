@@ -1,8 +1,17 @@
+import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { applyTheme, getInitialTheme, getSystemPrefersDark, nextTheme } from "../lib/theme";
 
 export function Header() {
   const { user, demo, signOut } = useAuth();
+  const [theme, setTheme] = useState(() =>
+    getInitialTheme({ storage: window.localStorage, prefersDark: getSystemPrefersDark() })
+  );
+
+  useEffect(() => {
+    applyTheme(document.documentElement, window.localStorage, theme);
+  }, [theme]);
 
   return (
     <header className="header">
@@ -21,6 +30,15 @@ export function Header() {
           <NavLink to="/about">About</NavLink>
         </nav>
         <div className="header-right">
+          <button
+            type="button"
+            className="btn theme-toggle"
+            onClick={() => setTheme((current) => nextTheme(current))}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            <span aria-hidden="true">{theme === "dark" ? "☀️" : "🌙"}</span>
+          </button>
           {demo && <span className="tag">Demo mode</span>}
           {user ? (
             <>

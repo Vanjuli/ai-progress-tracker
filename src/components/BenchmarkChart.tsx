@@ -61,17 +61,17 @@ export function BenchmarkChart({ points, unit, color, height = 240 }: Props) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={rows} margin={{ top: 8, right: 14, bottom: 4, left: -10 }}>
-        <CartesianGrid stroke="#262c3a" strokeDasharray="3 3" />
+        <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
         <XAxis
           dataKey="t"
           type="number"
           scale="time"
           domain={["dataMin", "dataMax"]}
           tickFormatter={(t: number) => String(new Date(t).getUTCFullYear())}
-          stroke="#9aa3b2"
+          stroke="var(--chart-axis)"
           fontSize={12}
         />
-        <YAxis stroke="#9aa3b2" fontSize={12} width={42} />
+        <YAxis stroke="var(--chart-axis)" fontSize={12} width={42} />
         <Tooltip content={<ChartTooltip unit={unit} />} />
         <Line
           type="monotone"

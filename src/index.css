@@ -1,4 +1,44 @@
-:root {
+:root,
+:root[data-theme="light"] {
+  --bg: #f8fafc;
+  --bg-elev: #ffffff;
+  --bg-elev-2: #eef2ff;
+  --border: #d8e0ee;
+  --text: #111827;
+  --text-dim: #4b5563;
+  --accent: #4f46e5;
+  --accent-2: #4338ca;
+  --good: #047857;
+  --warn: #b45309;
+  --bad: #dc2626;
+  --header-bg: rgba(248, 250, 252, 0.88);
+  --chart-grid: #d8e0ee;
+  --chart-axis: #64748b;
+  --radius: 12px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: #0b0d12;
+    --bg-elev: #141821;
+    --bg-elev-2: #1b2030;
+    --border: #262c3a;
+    --text: #e7eaf0;
+    --text-dim: #9aa3b2;
+    --accent: #6366f1;
+    --accent-2: #818cf8;
+    --good: #10b981;
+    --warn: #f59e0b;
+    --bad: #ef4444;
+    --header-bg: rgba(11, 13, 18, 0.85);
+    --chart-grid: #262c3a;
+    --chart-axis: #9aa3b2;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
   --bg: #0b0d12;
   --bg-elev: #141821;
   --bg-elev-2: #1b2030;
@@ -10,7 +50,9 @@
   --good: #10b981;
   --warn: #f59e0b;
   --bad: #ef4444;
-  --radius: 12px;
+  --header-bg: rgba(11, 13, 18, 0.85);
+  --chart-grid: #262c3a;
+  --chart-axis: #9aa3b2;
   color-scheme: dark;
 }
 
@@ -56,7 +98,7 @@ h3 {
 /* Header */
 .header {
   border-bottom: 1px solid var(--border);
-  background: rgba(11, 13, 18, 0.85);
+  background: var(--header-bg);
   backdrop-filter: blur(8px);
   position: sticky;
   top: 0;
@@ -133,6 +175,13 @@ h3 {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 999px;
 }
 
 /* Cards & grid */

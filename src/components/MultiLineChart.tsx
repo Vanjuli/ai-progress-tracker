@@ -36,15 +36,20 @@ export function MultiLineChart({ fields, metrics, valueFormatter, height = 360 }
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={rows} margin={{ top: 8, right: 16, bottom: 0, left: 6 }}>
-        <CartesianGrid stroke="#262c3a" strokeDasharray="3 3" />
-        <XAxis dataKey="year" stroke="#9aa3b2" fontSize={12} />
-        <YAxis stroke="#9aa3b2" fontSize={12} width={58} tickFormatter={valueFormatter} />
+        <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
+        <XAxis dataKey="year" stroke="var(--chart-axis)" fontSize={12} />
+        <YAxis stroke="var(--chart-axis)" fontSize={12} width={58} tickFormatter={valueFormatter} />
         <Tooltip
-          contentStyle={{ background: "#141821", border: "1px solid #262c3a", borderRadius: 8 }}
+          contentStyle={{
+            background: "var(--bg-elev)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            color: "var(--text)",
+          }}
           formatter={(v: number, n: string) => [valueFormatter(v), n]}
           labelFormatter={(l) => `Year ${l}`}
         />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Legend wrapperStyle={{ color: "var(--text-dim)", fontSize: 12 }} />
         {fields.map((f) => (
           <Line
             key={f.id}
