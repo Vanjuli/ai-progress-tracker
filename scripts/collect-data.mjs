@@ -17,6 +17,11 @@ import { createClient } from "@supabase/supabase-js";
 const AUTO_MARKER = "auto-collected:arxiv-popularity";
 const BENCHMARK_AUTO_MARKER = "auto-collected:benchmark";
 const ARXIV_API_URL = "https://export.arxiv.org/api/query";
+const ARXIV_REQUEST_HEADERS = {
+  "User-Agent": "AIProgressTracker/1.0 (+https://aiprogresstracker.org)",
+  Accept: "application/atom+xml",
+};
+const ARXIV_RETRY_DELAYS_MS = [2000, 5000, 10000, 20000, 40000];
 
 // Mirrors the project-defined popularity mapping documented in supabase/seed.sql
 // and the About/Compare copy: annual arXiv submissions in each field's main
@@ -77,20 +82,44 @@ function parseTotalResults(xml) {
   return Number.parseInt(match[1], 10);
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function fetchArxivCount(category, submittedDateRange) {
   const url = buildArxivUrl(category, submittedDateRange);
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "ai-progress-tracker-data-collector/1.0 (https://github.com/Vanjuli/ai-progress-tracker)",
-    },
-  });
+  let lastError = null;
 
-  if (!response.ok) {
-    throw new Error(`arXiv API returned ${response.status} ${response.statusText} for ${category}`);
+  for (let attempt = 0; attempt <= ARXIV_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      const response = await fetch(url, { headers: ARXIV_REQUEST_HEADERS });
+
+      if (response.ok) {
+        const xml = await response.text();
+        return { count: parseTotalResults(xml), sourceUrl: url };
+      }
+
+      lastError = new Error(`HTTP ${response.status} ${response.statusText}`);
+    } catch (error) {
+      lastError = error;
+    }
+
+    if (attempt < ARXIV_RETRY_DELAYS_MS.length) {
+      const delayMs = ARXIV_RETRY_DELAYS_MS[attempt];
+      console.warn(
+        `[arxiv] retry ${attempt + 1}/${ARXIV_RETRY_DELAYS_MS.length} for ${category} after ${delayMs}ms: ${
+          lastError?.message ?? lastError
+        }`
+      );
+      await sleep(delayMs);
+    }
   }
 
-  const xml = await response.text();
-  return { count: parseTotalResults(xml), sourceUrl: url };
+  throw new Error(
+    `arXiv API failed for ${category} after ${ARXIV_RETRY_DELAYS_MS.length + 1} attempts: ${
+      lastError?.message ?? lastError
+    }`
+  );
 }
 
 async function collectPopularityRows() {
@@ -98,8 +127,8 @@ async function collectPopularityRows() {
   const rows = [];
 
   for (const [index, field] of FIELD_ARXIV_CATEGORIES.entries()) {
-    // Be polite to arXiv's API: avoid rapid-fire requests when collecting multiple categories.
-    if (index > 0) await new Promise((resolve) => setTimeout(resolve, 3100));
+    // Be polite to arXiv's API: wait about 3 seconds between category requests.
+    if (index > 0) await sleep(3100);
     const { count, sourceUrl } = await fetchArxivCount(field.category, submittedDateRange);
     rows.push({
       field_slug: field.slug,
