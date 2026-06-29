@@ -2,7 +2,6 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAsync } from "../lib/useAsync";
 import { BenchmarkChart } from "../components/BenchmarkChart";
-import { StatusBadge } from "../components/StatusBadge";
 import { formatMonthYear, formatScore } from "../lib/format";
 import { metricExplanation, metricLabel } from "../lib/benchmarkMetric";
 
@@ -19,7 +18,6 @@ export function BenchmarkPage() {
   const field = (fields.data ?? []).find((f) => f.id === b.field_id);
   const color = field?.color ?? "#6366f1";
   const all = points.data ?? [];
-  const verified = all.filter((p) => p.status === "verified");
 
   return (
     <>
@@ -52,10 +50,6 @@ export function BenchmarkPage() {
           <a href="https://epoch.ai" target="_blank" rel="noreferrer">
             Benchmark data includes Epoch AI (CC-BY) where available ↗
           </a>
-          <span className="spacer" />
-          <Link className="btn btn-primary" to={`/submit?benchmark=${b.slug}`}>
-            + Add a data point
-          </Link>
         </div>
       </section>
 
@@ -68,7 +62,7 @@ export function BenchmarkPage() {
           </p>
         </div>
         <BenchmarkChart
-          points={verified}
+          points={all}
           unit={b.unit}
           higherIsBetter={b.higher_is_better}
           color={color}
@@ -90,7 +84,6 @@ export function BenchmarkPage() {
                 <th>Organization</th>
                 <th>{metricLabel(b.unit, b.higher_is_better)}</th>
                 <th>Date (year)</th>
-                <th>Status</th>
                 <th>Source</th>
               </tr>
             </thead>
@@ -103,9 +96,6 @@ export function BenchmarkPage() {
                     <td className="muted">{p.organization ?? "—"}</td>
                     <td>{formatScore(p.score, b.unit)}</td>
                     <td className="muted">{formatMonthYear(p.achieved_on)}</td>
-                    <td>
-                      <StatusBadge status={p.status} />
-                    </td>
                     <td>
                       {p.source_url ? (
                         <a href={p.source_url} target="_blank" rel="noreferrer">
@@ -121,8 +111,8 @@ export function BenchmarkPage() {
           </table>
         )}
         <p className="small muted" style={{ marginTop: 12 }}>
-          Pending submissions appear here once you're signed in. Help confirm them on
-          the <Link to="/pending">Verify</Link> page.
+          Showing curated verified data points only. Check the linked sources for methodology
+          and reporting details.
         </p>
       </section>
     </>

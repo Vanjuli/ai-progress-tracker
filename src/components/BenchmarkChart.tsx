@@ -53,7 +53,7 @@ function ChartTooltip({ active, payload, unit, higherIsBetter }: TooltipProps) {
 
 export function BenchmarkChart({ points, unit, higherIsBetter, color, height = 240 }: Props) {
   if (points.length === 0) {
-    return <p className="muted small">No verified data yet — be the first to add some.</p>;
+    return <p className="muted small">No curated data points yet.</p>;
   }
 
   const rows: Row[] = points.map((p) => ({

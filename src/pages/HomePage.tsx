@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAsync } from "../lib/useAsync";
-import { useAuth } from "../context/AuthContext";
 import { BenchmarkCard } from "../components/BenchmarkCard";
 import { FieldOverviewCard } from "../components/FieldOverviewCard";
 import { StackedMarketChart } from "../components/StackedMarketChart";
@@ -18,7 +17,6 @@ import {
 import { formatUsdBillions } from "../lib/format";
 
 export function HomePage() {
-  const { demo } = useAuth();
   const fields = useAsync(() => api.getFields(), []);
   const benchmarks = useAsync(() => api.getAllBenchmarks(), []);
   const metrics = useAsync(() => api.getFieldMetrics(), []);
@@ -55,29 +53,22 @@ export function HomePage() {
   return (
     <>
       <section className="hero">
-        <h1>Tracking AI progress, together</h1>
+        <h1>Tracking AI progress from curated sources</h1>
         <p>
           How fast is AI really improving — and growing? This dashboard charts benchmark
-          performance, popularity, and market value across AI fields over time, built
-          from data the community submits and verifies.
+          performance, research popularity, and market value across AI fields over time,
+          using curated benchmark data and automatically collected field popularity from
+          arXiv, with benchmark coverage supplemented by Epoch AI where available.
         </p>
         <div className="row" style={{ marginTop: 18 }}>
-          <Link className="btn btn-primary" to="/submit">
-            Submit a data point
+          <Link className="btn btn-primary" to="/compare">
+            Compare fields
           </Link>
-          <Link className="btn" to="/pending">
-            Help verify submissions
+          <Link className="btn" to="/about">
+            Learn about the data
           </Link>
         </div>
       </section>
-
-      {demo && (
-        <div className="banner">
-          You're viewing <strong>demo mode</strong> with bundled sample data. Voting and
-          submissions are saved only in this browser. Connect a Supabase project (see the
-          README) to go live with real accounts and a shared database.
-        </div>
-      )}
 
       <section className="section">
         <h2>State of AI</h2>

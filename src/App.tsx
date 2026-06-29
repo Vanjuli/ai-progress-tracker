@@ -11,11 +11,6 @@ const FieldPage = lazy(() => import("./pages/FieldPage").then((m) => ({ default:
 const BenchmarkPage = lazy(() =>
   import("./pages/BenchmarkPage").then((m) => ({ default: m.BenchmarkPage }))
 );
-const SubmitPage = lazy(() => import("./pages/SubmitPage").then((m) => ({ default: m.SubmitPage })));
-const PendingPage = lazy(() =>
-  import("./pages/PendingPage").then((m) => ({ default: m.PendingPage }))
-);
-const SignInPage = lazy(() => import("./pages/SignInPage").then((m) => ({ default: m.SignInPage })));
 const AboutPage = lazy(() => import("./pages/AboutPage").then((m) => ({ default: m.AboutPage })));
 const ComparePage = lazy(() =>
   import("./pages/ComparePage").then((m) => ({ default: m.ComparePage }))
@@ -32,9 +27,6 @@ export default function App() {
             <Route path="/field/:slug" element={<FieldPage />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/benchmark/:slug" element={<BenchmarkPage />} />
-            <Route path="/submit" element={<SubmitPage />} />
-            <Route path="/pending" element={<PendingPage />} />
-            <Route path="/signin" element={<SignInPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="*" element={<p className="section">Page not found.</p>} />
           </Routes>
@@ -42,8 +34,8 @@ export default function App() {
       </main>
       <footer className="footer">
         <div className="container">
-          AI Progress Tracker — community-verified benchmark data. Seed figures are
-          approximate; verify against original sources.
+          AI Progress Tracker — curated benchmark and field data collected from original
+          sources, arXiv, and Epoch AI. Verify important figures against the linked sources.
         </div>
       </footer>
       <Analytics />
