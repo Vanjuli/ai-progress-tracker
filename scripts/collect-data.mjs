@@ -38,6 +38,18 @@ const FIELD_ARXIV_CATEGORIES = [
   { slug: "speech", name: "Speech Recognition", category: "eess.AS" },
 ];
 
+const CURATED_MATH_BENCHMARK_DESCRIPTIONS = [
+  {
+    slug: "math-comp",
+    description:
+      "The full Hendrycks MATH competition-math benchmark across all difficulty levels; distinct from the Epoch MATH Level 5 subset.",
+  },
+  {
+    slug: "aime-2024",
+    description: "The official 2024 American Invitational Mathematics Examination (AIME), not a mock AIME-style benchmark.",
+  },
+];
+
 const SUPABASE_URL = process.env.SUPABASE_URL?.trim();
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 const DRY_RUN = isDryRun();
@@ -269,8 +281,6 @@ async function loadBenchmarksBySlug(supabase) {
 
 async function ensureEpochBenchmarks(supabase, fieldsBySlug, benchmarksBySlug) {
   for (const spec of EPOCH_BENCHMARK_SPECS) {
-    if (benchmarksBySlug.has(spec.benchmarkSlug)) continue;
-
     const field = fieldsBySlug.get(spec.fieldSlug);
     if (!field) {
       console.warn(`[skip] benchmark=${spec.benchmarkSlug}: no matching Supabase field ${spec.fieldSlug}`);
@@ -287,10 +297,32 @@ async function ensureEpochBenchmarks(supabase, fieldsBySlug, benchmarksBySlug) {
       source_url: EPOCH_DATASET_URL,
     };
 
-    const { data, error } = await supabase.from("benchmarks").insert(payload).select("id, slug, name").single();
+    const existing = benchmarksBySlug.get(spec.benchmarkSlug);
+    if (existing) {
+      const { error } = await supabase.from("benchmarks").update(payload).eq("id", existing.id);
+      if (error) throw error;
+      console.log(
+        `[write] updated Epoch benchmark metadata: benchmark=${spec.benchmarkSlug} name="${spec.name}" description="${spec.description}"`
+      );
+    } else {
+      const { data, error } = await supabase.from("benchmarks").insert(payload).select("id, slug, name").single();
+      if (error) throw error;
+      benchmarksBySlug.set(data.slug, data);
+      console.log(`[write] inserted benchmark definition: benchmark=${data.slug} field=${spec.fieldSlug}`);
+    }
+  }
+}
+
+async function updateCuratedMathBenchmarkDescriptions(supabase) {
+  for (const benchmark of CURATED_MATH_BENCHMARK_DESCRIPTIONS) {
+    const { error } = await supabase
+      .from("benchmarks")
+      .update({ description: benchmark.description })
+      .eq("slug", benchmark.slug);
     if (error) throw error;
-    benchmarksBySlug.set(data.slug, data);
-    console.log(`[write] inserted benchmark definition: benchmark=${data.slug} field=${spec.fieldSlug}`);
+    console.log(
+      `[write] updated curated benchmark description only: benchmark=${benchmark.slug} description="${benchmark.description}"`
+    );
   }
 }
 
@@ -298,7 +330,12 @@ async function writeBenchmarkRows(rows) {
   if (DRY_RUN) {
     for (const spec of EPOCH_BENCHMARK_SPECS) {
       console.log(
-        `[dry-run] would ensure benchmark: slug=${spec.benchmarkSlug} field=${spec.fieldSlug} name="${spec.name}" source_url=${EPOCH_DATASET_URL}`
+        `[dry-run] would ensure/update Epoch benchmark metadata: slug=${spec.benchmarkSlug} field=${spec.fieldSlug} name="${spec.name}" description="${spec.description}" unit=${spec.unit} higher_is_better=${spec.higherIsBetter} source_url=${EPOCH_DATASET_URL}`
+      );
+    }
+    for (const benchmark of CURATED_MATH_BENCHMARK_DESCRIPTIONS) {
+      console.log(
+        `[dry-run] would update curated benchmark description only: slug=${benchmark.slug} description="${benchmark.description}"`
       );
     }
     for (const row of rows) logPlannedBenchmarkRow(row);
@@ -309,6 +346,7 @@ async function writeBenchmarkRows(rows) {
   const fieldsBySlug = await loadFieldsBySlug(supabase);
   const benchmarksBySlug = await loadBenchmarksBySlug(supabase);
   await ensureEpochBenchmarks(supabase, fieldsBySlug, benchmarksBySlug);
+  await updateCuratedMathBenchmarkDescriptions(supabase);
 
   for (const row of rows) {
     const benchmark = benchmarksBySlug.get(row.benchmark_slug);

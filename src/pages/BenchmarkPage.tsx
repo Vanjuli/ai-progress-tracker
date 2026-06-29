@@ -4,6 +4,7 @@ import { useAsync } from "../lib/useAsync";
 import { BenchmarkChart } from "../components/BenchmarkChart";
 import { StatusBadge } from "../components/StatusBadge";
 import { formatMonthYear, formatScore } from "../lib/format";
+import { metricExplanation, metricLabel } from "../lib/benchmarkMetric";
 
 export function BenchmarkPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -41,7 +42,7 @@ export function BenchmarkPage() {
         <p>{b.description}</p>
         <div className="row small">
           <span className="muted">
-            Unit: {b.unit} · {b.higher_is_better ? "higher is better" : "lower is better"}
+            {metricExplanation(b.unit, b.higher_is_better)}
           </span>
           {b.source_url && (
             <a href={b.source_url} target="_blank" rel="noreferrer">
@@ -59,7 +60,20 @@ export function BenchmarkPage() {
       </section>
 
       <div className="card">
-        <BenchmarkChart points={verified} unit={b.unit} color={color} height={320} />
+        <div className="stack" style={{ gap: 6, marginBottom: 12 }}>
+          <h2 style={{ margin: 0 }}>{b.name} score over time</h2>
+          <p className="muted" style={{ margin: 0 }}>{b.description}</p>
+          <p className="small" style={{ margin: 0 }}>
+            <strong>{metricExplanation(b.unit, b.higher_is_better)}</strong>
+          </p>
+        </div>
+        <BenchmarkChart
+          points={verified}
+          unit={b.unit}
+          higherIsBetter={b.higher_is_better}
+          color={color}
+          height={320}
+        />
       </div>
 
       <section className="section">
@@ -74,8 +88,8 @@ export function BenchmarkPage() {
               <tr>
                 <th>Model</th>
                 <th>Organization</th>
-                <th>{b.name}</th>
-                <th>Date</th>
+                <th>{metricLabel(b.unit, b.higher_is_better)}</th>
+                <th>Date (year)</th>
                 <th>Status</th>
                 <th>Source</th>
               </tr>

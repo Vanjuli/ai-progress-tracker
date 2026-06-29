@@ -1,5 +1,6 @@
 import {
   CartesianGrid,
+  Label,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -9,10 +10,12 @@ import {
 } from "recharts";
 import { DataPoint } from "../lib/types";
 import { dateToTime, formatMonthYear, formatScore } from "../lib/format";
+import { metricExplanation, metricLabel } from "../lib/benchmarkMetric";
 
 interface Props {
   points: DataPoint[];
   unit: string;
+  higherIsBetter: boolean;
   color: string;
   height?: number;
 }
@@ -29,9 +32,10 @@ interface TooltipProps {
   active?: boolean;
   payload?: Array<{ payload: Row }>;
   unit: string;
+  higherIsBetter: boolean;
 }
 
-function ChartTooltip({ active, payload, unit }: TooltipProps) {
+function ChartTooltip({ active, payload, unit, higherIsBetter }: TooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
   const row = payload[0].payload;
   return (
@@ -39,13 +43,15 @@ function ChartTooltip({ active, payload, unit }: TooltipProps) {
       <strong>{row.model}</strong>
       {row.org && <span className="muted"> · {row.org}</span>}
       <div className="small">
-        {formatScore(row.score, unit)} — {formatMonthYear(row.date)}
+        {metricLabel(unit, higherIsBetter)}: {formatScore(row.score, unit)}
       </div>
+      <div className="small muted">Date: {formatMonthYear(row.date)}</div>
+      <div className="small muted">{metricExplanation(unit, higherIsBetter)}</div>
     </div>
   );
 }
 
-export function BenchmarkChart({ points, unit, color, height = 240 }: Props) {
+export function BenchmarkChart({ points, unit, higherIsBetter, color, height = 240 }: Props) {
   if (points.length === 0) {
     return <p className="muted small">No verified data yet — be the first to add some.</p>;
   }
@@ -59,30 +65,45 @@ export function BenchmarkChart({ points, unit, color, height = 240 }: Props) {
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={rows} margin={{ top: 8, right: 14, bottom: 4, left: -10 }}>
-        <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
-        <XAxis
-          dataKey="t"
-          type="number"
-          scale="time"
-          domain={["dataMin", "dataMax"]}
-          tickFormatter={(t: number) => String(new Date(t).getUTCFullYear())}
-          stroke="var(--chart-axis)"
-          fontSize={12}
-        />
-        <YAxis stroke="var(--chart-axis)" fontSize={12} width={42} />
-        <Tooltip content={<ChartTooltip unit={unit} />} />
-        <Line
-          type="monotone"
-          dataKey="score"
-          stroke={color}
-          strokeWidth={2.5}
-          dot={{ r: 3, fill: color }}
-          activeDot={{ r: 5 }}
-          isAnimationActive={false}
-        />
-      </LineChart>
-    </ResponsiveContainer>
+    <div className="stack" style={{ gap: 8 }}>
+      <div className="small muted">
+        Score over time by year · {metricExplanation(unit, higherIsBetter)}
+      </div>
+      <ResponsiveContainer width="100%" height={height}>
+        <LineChart data={rows} margin={{ top: 8, right: 14, bottom: 24, left: -4 }}>
+          <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
+          <XAxis
+            dataKey="t"
+            type="number"
+            scale="time"
+            domain={["dataMin", "dataMax"]}
+            tickFormatter={(t: number) => String(new Date(t).getUTCFullYear())}
+            stroke="var(--chart-axis)"
+            fontSize={12}
+          >
+            <Label value="Year" position="insideBottom" offset={-14} fill="var(--chart-axis)" />
+          </XAxis>
+          <YAxis stroke="var(--chart-axis)" fontSize={12} width={48}>
+            <Label
+              value={metricLabel(unit, higherIsBetter)}
+              angle={-90}
+              position="insideLeft"
+              fill="var(--chart-axis)"
+              style={{ textAnchor: "middle" }}
+            />
+          </YAxis>
+          <Tooltip content={<ChartTooltip unit={unit} higherIsBetter={higherIsBetter} />} />
+          <Line
+            type="monotone"
+            dataKey="score"
+            stroke={color}
+            strokeWidth={2.5}
+            dot={{ r: 3, fill: color }}
+            activeDot={{ r: 5 }}
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
