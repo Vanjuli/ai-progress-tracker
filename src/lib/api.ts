@@ -3,8 +3,8 @@
 
 import { supabase } from "./supabaseClient";
 import { isConfigured } from "./config";
-import { Benchmark, DataPoint, Field, FieldMetric } from "./types";
-import { demoBenchmarks, demoDataPoints, demoFieldMetrics, demoFields } from "./demoData";
+import { Article, Benchmark, DataPoint, Field, FieldMetric } from "./types";
+import { demoArticles, demoBenchmarks, demoDataPoints, demoFieldMetrics, demoFields } from "./demoData";
 
 export interface Api {
   getFields(): Promise<Field[]>;
@@ -14,6 +14,7 @@ export interface Api {
   getBenchmarkBySlug(slug: string): Promise<Benchmark | null>;
   getVerifiedPoints(benchmarkId: string): Promise<DataPoint[]>;
   getPoints(benchmarkId: string): Promise<DataPoint[]>;
+  getArticles(limitPerCategory?: number): Promise<Article[]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -49,6 +50,10 @@ class DemoApi implements Api {
     return demoDataPoints
       .filter((p) => p.benchmark_id === benchmarkId)
       .sort((a, b) => a.achieved_on.localeCompare(b.achieved_on));
+  }
+
+  async getArticles(limitPerCategory = 5): Promise<Article[]> {
+    return limitArticlesByCategory(demoArticles, limitPerCategory);
   }
 }
 
@@ -114,6 +119,28 @@ class SupabaseApi implements Api {
     if (error) throw error;
     return data as DataPoint[];
   }
+
+  async getArticles(limitPerCategory = 5): Promise<Article[]> {
+    const { data, error } = await this.db
+      .from("articles")
+      .select("*")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(limitPerCategory * 3);
+    if (error) throw error;
+    return limitArticlesByCategory(data as Article[], limitPerCategory);
+  }
+}
+
+
+function limitArticlesByCategory(articles: Article[], limitPerCategory: number): Article[] {
+  const counts: Record<Article["category"], number> = { trending: 0, research: 0, official: 0 };
+  return [...articles]
+    .sort((a, b) => (b.published_at ?? b.created_at).localeCompare(a.published_at ?? a.created_at))
+    .filter((article) => {
+      if (counts[article.category] >= limitPerCategory) return false;
+      counts[article.category] += 1;
+      return true;
+    });
 }
 
 export const api: Api = isConfigured ? new SupabaseApi() : new DemoApi();
