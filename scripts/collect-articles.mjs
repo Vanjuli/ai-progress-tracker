@@ -8,6 +8,8 @@
  * - DRY_RUN=1/true/yes/y => dry-run, no writes.
  */
 
+import https from "node:https";
+
 import { createClient } from "@supabase/supabase-js";
 import {
   ARTICLE_AUTO_MARKER,
@@ -22,6 +24,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL?.trim();
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 const DRY_RUN = isDryRun();
 const HN_MIN_POINTS = Number(process.env.HN_MIN_POINTS ?? 50);
+const HN_QUERY_TERMS = ["AI", "LLM", "GPT", "neural", "machine learning", "diffusion", "transformer"];
 const CATEGORY_LIMIT = Number(process.env.ARTICLE_CATEGORY_LIMIT ?? 30);
 const ARXIV_API_URL = "https://export.arxiv.org/api/query";
 const ARXIV_CATEGORIES = ["cs.AI", "cs.LG", "cs.CL", "cs.CV", "cs.RO", "stat.ML"];
@@ -70,25 +73,67 @@ function twoWeeksAgoUnix(now = new Date()) {
   return Math.floor((now.getTime() - 14 * 24 * 60 * 60 * 1000) / 1000);
 }
 
-async function fetchJson(url, headers = {}) {
-  const response = await fetch(url, { headers });
-  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
-  return response.json();
+async function fetchJsonWithHttps(url, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const request = https.get(url, { headers }, (response) => {
+      let body = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk) => {
+        body += chunk;
+      });
+      response.on("end", () => {
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          reject(new Error(`HTTP ${response.statusCode} ${response.statusMessage ?? ""}`.trim()));
+          return;
+        }
+        try {
+          resolve(JSON.parse(body));
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+    request.on("error", reject);
+    request.setTimeout(15000, () => {
+      request.destroy(new Error("request timed out"));
+    });
+  });
 }
 
 async function collectTrendingArticles() {
-  const params = new URLSearchParams({
-    query: "AI OR LLM OR GPT OR neural OR machine learning OR diffusion OR transformer",
-    tags: "story",
-    numericFilters: `created_at_i>${twoWeeksAgoUnix()},points>=${HN_MIN_POINTS}`,
-    hitsPerPage: "100",
-  });
-  const url = `https://hn.algolia.com/api/v1/search_by_date?${params.toString()}`;
-  console.log(`[hackernews] fetching ${url}`);
-  const data = await fetchJson(url);
-  const rows = filterRecentTrendingStories(data.hits ?? [], { minPoints: HN_MIN_POINTS, days: 14 });
-  console.log(`[hackernews] kept ${rows.length} AI stories with >=${HN_MIN_POINTS} points from ${data.hits?.length ?? 0} hits`);
-  return rows;
+  const cutoff = twoWeeksAgoUnix();
+  const rows = [];
+  let fetchedHits = 0;
+
+  for (const query of HN_QUERY_TERMS) {
+    const params = new URLSearchParams({
+      query,
+      tags: "story",
+      numericFilters: `created_at_i>${cutoff}`,
+      hitsPerPage: "100",
+    });
+    const url = `https://hn.algolia.com/api/v1/search_by_date?${params.toString()}`;
+    console.log(`[hackernews] fetching ${url}`);
+    try {
+      const data = await fetchJsonWithHttps(url);
+      const hits = data.hits ?? [];
+      fetchedHits += hits.length;
+      rows.push(...filterRecentTrendingStories(hits, { minPoints: HN_MIN_POINTS, days: 14 }));
+    } catch (error) {
+      console.warn(`[hackernews] skip query "${query}": ${error?.message ?? error}`);
+    }
+  }
+
+  const rankedRows = dedupeArticlesByUrl(rows)
+    .sort((a, b) => {
+      const scoreDiff = (b.score ?? 0) - (a.score ?? 0);
+      if (scoreDiff !== 0) return scoreDiff;
+      return (Date.parse(b.published_at ?? "") || 0) - (Date.parse(a.published_at ?? "") || 0);
+    })
+    .slice(0, CATEGORY_LIMIT);
+
+  console.log(`[hackernews] kept ${rankedRows.length} AI stories with >=${HN_MIN_POINTS} points from ${fetchedHits} hits`);
+  return rankedRows;
 }
 
 function buildArxivUrl() {

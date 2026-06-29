@@ -121,7 +121,11 @@ export function filterRecentTrendingStories(stories, options = {}) {
     .filter((article) => titleHasAiKeyword(article.title, keywords))
     .filter((article) => (article.score ?? 0) >= minPoints)
     .filter((article) => article.published_at && Date.parse(article.published_at) >= cutoff)
-    .sort((a, b) => (Date.parse(b.published_at ?? "") || 0) - (Date.parse(a.published_at ?? "") || 0));
+    .sort((a, b) => {
+      const scoreDiff = (b.score ?? 0) - (a.score ?? 0);
+      if (scoreDiff !== 0) return scoreDiff;
+      return (Date.parse(b.published_at ?? "") || 0) - (Date.parse(a.published_at ?? "") || 0);
+    });
 }
 
 function bestAtomLink(entry) {
@@ -210,7 +214,13 @@ export function newestByCategory(articles, limitPerCategory = 30) {
     out.push(
       ...articles
         .filter((article) => article.category === category)
-        .sort((a, b) => (Date.parse(b.published_at ?? "") || 0) - (Date.parse(a.published_at ?? "") || 0))
+        .sort((a, b) => {
+          if (category === "trending") {
+            const scoreDiff = (b.score ?? 0) - (a.score ?? 0);
+            if (scoreDiff !== 0) return scoreDiff;
+          }
+          return (Date.parse(b.published_at ?? "") || 0) - (Date.parse(a.published_at ?? "") || 0);
+        })
         .slice(0, limitPerCategory)
     );
   }

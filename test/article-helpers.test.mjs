@@ -7,6 +7,7 @@ import {
   normalizeUrl,
   parseFeedEntries,
   parseArxivEntries,
+  newestByCategory,
 } from "../scripts/article-helpers.mjs";
 
 describe("article collection helpers", () => {
@@ -42,11 +43,26 @@ describe("article collection helpers", () => {
           author: "dave",
           created_at: "2026-06-28T00:00:00Z",
         },
+        {
+          title: "New AI accelerator reaches production",
+          url: "https://example.com/ai-accelerator",
+          points: 256,
+          author: "erin",
+          created_at: "2026-06-24T00:00:00Z",
+        },
       ],
       { now, minPoints: 50, days: 14, keywords: AI_KEYWORDS }
     );
 
     expect(rows).toEqual([
+      expect.objectContaining({
+        category: "trending",
+        source: "hackernews",
+        title: "New AI accelerator reaches production",
+        url: "https://example.com/ai-accelerator",
+        score: 256,
+        author: "erin",
+      }),
       expect.objectContaining({
         category: "trending",
         source: "hackernews",
@@ -106,5 +122,23 @@ describe("article collection helpers", () => {
       { title: "first", url: "https://example.com/a?utm_campaign=x", published_at: "2026-01-01T00:00:00.000Z" },
       { title: "second", url: "http://example.com/a", published_at: "2026-01-02T00:00:00.000Z" },
     ])).toEqual([expect.objectContaining({ title: "second", url: "https://example.com/a" })]);
+  });
+
+  it("keeps trending category ranked by score when applying per-category caps", () => {
+    const rows = newestByCategory([
+      { title: "newer low score", category: "trending", score: 60, published_at: "2026-06-29T00:00:00.000Z" },
+      { title: "older high score", category: "trending", score: 300, published_at: "2026-06-28T00:00:00.000Z" },
+      { title: "newest official", category: "official", score: null, published_at: "2026-06-29T00:00:00.000Z" },
+      { title: "older official", category: "official", score: null, published_at: "2026-06-28T00:00:00.000Z" },
+    ], 2);
+
+    expect(rows.filter((article) => article.category === "trending").map((article) => article.title)).toEqual([
+      "older high score",
+      "newer low score",
+    ]);
+    expect(rows.filter((article) => article.category === "official").map((article) => article.title)).toEqual([
+      "newest official",
+      "older official",
+    ]);
   });
 });
