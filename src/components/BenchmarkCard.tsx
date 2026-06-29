@@ -36,6 +36,10 @@ export function BenchmarkCard({ benchmark, field }: { benchmark: Benchmark; fiel
           Latest: {formatScore(latest.score, benchmark.unit)} · {latest.model_name}
         </div>
       )}
+      <div className="small muted">
+        Benchmark data includes {" "}
+        <span aria-label="Epoch AI benchmark data credit">Epoch AI (CC-BY)</span> where available.
+      </div>
     </Link>
   );
 }
