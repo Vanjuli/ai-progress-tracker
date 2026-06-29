@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAsync } from "../lib/useAsync";
@@ -21,6 +22,7 @@ export function HomePage() {
   const benchmarks = useAsync(() => api.getAllBenchmarks(), []);
   const metrics = useAsync(() => api.getFieldMetrics(), []);
   const articles = useAsync(() => api.getArticles(4), []);
+  const [selectedTopic, setSelectedTopic] = useState("All topics");
 
   const fieldList = fields.data ?? [];
   const metricList = metrics.data ?? [];
@@ -50,6 +52,22 @@ export function HomePage() {
   const popTrendCaption = totalPopLatestYtd
     ? [popSinceCaption, "current year is YTD"].filter(Boolean).join(" · ")
     : popSinceCaption;
+  const articleList = articles.data ?? [];
+  const topicOptions = useMemo(() => {
+    const topics = new Set<string>();
+    for (const article of articleList) {
+      for (const topic of article.topics ?? []) topics.add(topic);
+    }
+    return ["All topics", ...Array.from(topics).sort()];
+  }, [articleList]);
+  const filteredArticles = selectedTopic === "All topics"
+    ? articleList
+    : articleList.filter((article) => (article.topics ?? []).includes(selectedTopic));
+  const articleGroups: Array<{ category: Article["category"]; label: string; articles: Article[] }> = [
+    { category: "trending", label: "Trending", articles: filteredArticles.filter((article) => article.category === "trending") },
+    { category: "research", label: "Research", articles: filteredArticles.filter((article) => article.category === "research") },
+    { category: "official", label: "Official", articles: filteredArticles.filter((article) => article.category === "official") },
+  ];
 
   return (
     <>
@@ -124,15 +142,37 @@ export function HomePage() {
               Fresh AI research, lab announcements, and high-signal community links collected daily.
             </p>
           </div>
+          <label className="topic-filter small">
+            Topic
+            <select value={selectedTopic} onChange={(event) => setSelectedTopic(event.target.value)}>
+              {topicOptions.map((topic) => (
+                <option key={topic} value={topic}>{topic}</option>
+              ))}
+            </select>
+          </label>
         </div>
         {articles.loading ? (
           <p className="muted">Loading latest articles…</p>
         ) : articles.error ? (
           <p className="error">Failed to load latest articles: {articles.error}</p>
         ) : (
-          <div className="article-grid">
-            {(articles.data ?? []).map((article) => (
-              <ArticleCard key={article.id} article={article} />
+          <div className="article-groups">
+            {articleGroups.map((group) => (
+              <div key={group.category} className="article-group">
+                <div className="row between article-group-heading">
+                  <h3>{group.label}</h3>
+                  <span className="small muted">{group.articles.length} shown</span>
+                </div>
+                {group.articles.length > 0 ? (
+                  <div className="article-grid">
+                    {group.articles.map((article) => (
+                      <ArticleCard key={article.id} article={article} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="muted small">No {group.label.toLowerCase()} articles match this topic.</p>
+                )}
+              </div>
             ))}
           </div>
         )}
@@ -188,6 +228,13 @@ function ArticleCard({ article }: { article: Article }) {
         {article.score != null && <span className="small muted">{article.score.toLocaleString()} pts</span>}
       </div>
       <h3>{article.title}</h3>
+      {article.topics.length > 0 && (
+        <div className="topic-tags">
+          {article.topics.map((topic) => (
+            <span key={topic} className="topic-tag">{topic}</span>
+          ))}
+        </div>
+      )}
       {article.summary && <p className="muted small">{article.summary}</p>}
       <div className="small muted article-meta">
         <span>{article.author || article.source}</span>

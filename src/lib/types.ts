@@ -51,6 +51,7 @@ export interface Article {
   url: string;
   source: string;
   category: "trending" | "research" | "official";
+  topics: string[];
   author: string | null;
   score: number | null;
   published_at: string | null;

@@ -127,10 +127,16 @@ class SupabaseApi implements Api {
       .order("published_at", { ascending: false, nullsFirst: false })
       .limit(limitPerCategory * 3);
     if (error) throw error;
-    return limitArticlesByCategory(data as Article[], limitPerCategory);
+    return limitArticlesByCategory((data ?? []).map(normalizeArticle) as Article[], limitPerCategory);
   }
 }
 
+function normalizeArticle(article: Article): Article {
+  return {
+    ...article,
+    topics: Array.isArray(article.topics) && article.topics.length > 0 ? article.topics : ["General"],
+  };
+}
 
 function limitArticlesByCategory(articles: Article[], limitPerCategory: number): Article[] {
   const counts: Record<Article["category"], number> = { trending: 0, research: 0, official: 0 };
