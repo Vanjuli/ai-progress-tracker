@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 import { useAsync } from "../lib/useAsync";
-import { MultiLineChart } from "../components/MultiLineChart";
+import { MultiLineChart, YScale } from "../components/MultiLineChart";
 import { MetricKey } from "../lib/types";
 import { formatUsdBillions } from "../lib/format";
 
@@ -9,6 +9,7 @@ export function ComparePage() {
   const fields = useAsync(() => api.getFields(), []);
   const metrics = useAsync(() => api.getFieldMetrics(), []);
   const [metricKey, setMetricKey] = useState<MetricKey>("market_value");
+  const [yScale, setYScale] = useState<YScale>("linear");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
 
   const fieldList = fields.data ?? [];
@@ -61,6 +62,19 @@ export function ComparePage() {
         </button>
       </div>
 
+      <div className="row" style={{ gap: 8, marginBottom: 14 }}>
+        <span className="small muted">Y-axis scale</span>
+        <button
+          className={`btn ${yScale === "linear" ? "btn-primary" : ""}`}
+          onClick={() => setYScale("linear")}
+        >
+          Linear
+        </button>
+        <button className={`btn ${yScale === "log" ? "btn-primary" : ""}`} onClick={() => setYScale("log")}>
+          Log
+        </button>
+      </div>
+
       <div className="row" style={{ gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
         {availableFields.map((f) => (
           <label key={f.id} className="row" style={{ gap: 6, cursor: "pointer" }}>
@@ -87,12 +101,13 @@ export function ComparePage() {
             valueFormatter={fmt}
             height={380}
             markYearToDate={metricKey === "popularity"}
+            yScale={yScale}
           />
         )}
         <p className="small muted" style={{ marginTop: 8 }}>
           {metricKey === "market_value"
-            ? "Market value in USD billions (Grand View Research; values from ~2026 on are forecasts)."
-            : "Annual arXiv submissions in each field's main category — a research-activity proxy. Current-year points are YTD / year to date (in progress)."}
+            ? "Market figures come from separate industry research reports with differing scope definitions, so cross-field comparisons are approximate. Values from ~2026 on are forecasts."
+            : "Popularity values are annual arXiv submission counts per field category. Current-year points are YTD / year to date (in progress)."}
         </p>
       </div>
     </>

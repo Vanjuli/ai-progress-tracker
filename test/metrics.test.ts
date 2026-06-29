@@ -7,6 +7,8 @@ import {
   sumByPeriod,
   cagrPct,
   isYearToDate,
+  logScaleDomain,
+  logScaleValue,
 } from "../src/lib/metrics";
 
 const series = [
@@ -73,5 +75,15 @@ describe("series helpers", () => {
 
     expect(growthPct(withPartialYear)).toBe(-20);
     expect(growthPct(withPartialYear, { excludeYearToDate: true, now })).toBe(100);
+  });
+
+  it("prepares values and a positive domain for log-scale charts", () => {
+    expect(logScaleValue(12)).toBe(12);
+    expect(logScaleValue(0)).toBeNull();
+    expect(logScaleValue(-3)).toBeNull();
+    expect(logScaleValue(Number.NaN)).toBeNull();
+
+    expect(logScaleDomain([0, null, 0.7, 14, 1200])).toEqual([0.1, 10000]);
+    expect(logScaleDomain([0, -4, null])).toEqual([1, 10]);
   });
 });
