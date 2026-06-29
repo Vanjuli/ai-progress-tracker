@@ -140,3 +140,30 @@ on conflict (field_id, metric_key, period) do nothing;
 
 -- Curated metric rows (no submitter) are verified and protected from community votes.
 update public.field_metrics set status = 'verified', protected = true where submitted_by is null;
+
+-- ---- Articles --------------------------------------------------------------
+create table if not exists public.articles (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  url text not null unique,
+  source text not null,
+  category text not null check (category in ('trending', 'research', 'official')),
+  author text null,
+  score numeric null,
+  published_at timestamptz null,
+  summary text null,
+  notes text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.articles enable row level security;
+
+drop policy if exists "Public read articles" on public.articles;
+create policy "Public read articles"
+  on public.articles
+  for select
+  to anon, authenticated
+  using (true);
+
+create index if not exists articles_category_published_at_idx
+  on public.articles (category, published_at desc nulls last);

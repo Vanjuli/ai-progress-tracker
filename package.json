@@ -9,7 +9,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "collect:articles": "node scripts/collect-articles.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -17,6 +18,7 @@
     "@vercel/speed-insights": "^2.0.0",
     "adm-zip": "^0.5.18",
     "csv-parse": "^7.0.0",
+    "fast-xml-parser": "^4.5.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.0",

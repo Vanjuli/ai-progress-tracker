@@ -5,7 +5,7 @@ import { BenchmarkCard } from "../components/BenchmarkCard";
 import { FieldOverviewCard } from "../components/FieldOverviewCard";
 import { StackedMarketChart } from "../components/StackedMarketChart";
 import { TrendStat } from "../components/TrendStat";
-import { Field } from "../lib/types";
+import { Article, Field } from "../lib/types";
 import {
   fieldSeries,
   growthPct,
@@ -20,6 +20,7 @@ export function HomePage() {
   const fields = useAsync(() => api.getFields(), []);
   const benchmarks = useAsync(() => api.getAllBenchmarks(), []);
   const metrics = useAsync(() => api.getFieldMetrics(), []);
+  const articles = useAsync(() => api.getArticles(4), []);
 
   const fieldList = fields.data ?? [];
   const metricList = metrics.data ?? [];
@@ -114,6 +115,29 @@ export function HomePage() {
         )}
       </section>
 
+
+      <section className="section">
+        <div className="row between">
+          <div>
+            <h2>Latest in AI</h2>
+            <p className="muted" style={{ marginTop: -4 }}>
+              Fresh AI research, lab announcements, and high-signal community links collected daily.
+            </p>
+          </div>
+        </div>
+        {articles.loading ? (
+          <p className="muted">Loading latest articles…</p>
+        ) : articles.error ? (
+          <p className="error">Failed to load latest articles: {articles.error}</p>
+        ) : (
+          <div className="article-grid">
+            {(articles.data ?? []).map((article) => (
+              <ArticleCard key={article.id} article={article} />
+            ))}
+          </div>
+        )}
+      </section>
+
       <section className="section">
         <h2>Fields</h2>
         {fields.loading ? (
@@ -142,5 +166,34 @@ export function HomePage() {
         )}
       </section>
     </>
+  );
+}
+
+
+function ArticleCard({ article }: { article: Article }) {
+  const date = article.published_at ? new Date(article.published_at) : null;
+  const dateLabel = date && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : "Date unknown";
+  const categoryLabel = {
+    trending: "Trending",
+    research: "Research",
+    official: "Official",
+  }[article.category];
+
+  return (
+    <a className="card article-card" href={article.url} target="_blank" rel="noreferrer">
+      <div className="row between" style={{ alignItems: "flex-start" }}>
+        <span className={`tag article-tag article-tag-${article.category}`}>{categoryLabel}</span>
+        {article.score != null && <span className="small muted">{article.score.toLocaleString()} pts</span>}
+      </div>
+      <h3>{article.title}</h3>
+      {article.summary && <p className="muted small">{article.summary}</p>}
+      <div className="small muted article-meta">
+        <span>{article.author || article.source}</span>
+        <span>·</span>
+        <span>{dateLabel}</span>
+      </div>
+    </a>
   );
 }

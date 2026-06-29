@@ -2,7 +2,7 @@
 // Mirrors supabase/seed.sql so the preview matches the real seeded database.
 // Figures are approximate, illustrative starting points.
 
-import { Benchmark, DataPoint, Field, FieldMetric } from "./types";
+import { Article, Benchmark, DataPoint, Field, FieldMetric } from "./types";
 
 export const demoFields: Field[] = [
   { id: "f-language", slug: "language", name: "Language & Reasoning", description: "Knowledge, comprehension, and reasoning in large language models.", color: "#6366f1", sort_order: 1 },
@@ -162,3 +162,59 @@ function buildPopularity(): FieldMetric[] {
 }
 
 export const demoFieldMetrics: FieldMetric[] = [...buildMarketValue(), ...buildPopularity()];
+
+
+export const demoArticles: Article[] = [
+  {
+    id: "a-trending-1",
+    title: "OpenAI releases o3 and o4-mini reasoning models",
+    url: "https://openai.com/index/introducing-o3-and-o4-mini/",
+    source: "rss-openai",
+    category: "official",
+    author: "OpenAI",
+    score: null,
+    published_at: "2025-04-16T00:00:00Z",
+    summary: "OpenAI announced new reasoning models with stronger tool use and multimodal capabilities.",
+    notes: "demo article",
+    created_at: "2025-04-16T00:00:00Z",
+  },
+  {
+    id: "a-research-1",
+    title: "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning",
+    url: "https://arxiv.org/abs/2501.12948",
+    source: "arxiv",
+    category: "research",
+    author: "DeepSeek-AI",
+    score: null,
+    published_at: "2025-01-22T00:00:00Z",
+    summary: "A research paper describing reinforcement-learning techniques for improving LLM reasoning behavior.",
+    notes: "demo article",
+    created_at: "2025-01-22T00:00:00Z",
+  },
+  {
+    id: "a-trending-2",
+    title: "Transformer models keep reshaping AI agent workflows",
+    url: "https://news.ycombinator.com/item?id=demo-latest-ai",
+    source: "hackernews",
+    category: "trending",
+    author: "hn-demo",
+    score: 284,
+    published_at: "2025-06-01T12:00:00Z",
+    summary: null,
+    notes: "demo article",
+    created_at: "2025-06-01T12:00:00Z",
+  },
+  {
+    id: "a-official-2",
+    title: "Google DeepMind shares updates on Gemini model research",
+    url: "https://deepmind.google/discover/blog/",
+    source: "rss-deepmind",
+    category: "official",
+    author: "Google DeepMind",
+    score: null,
+    published_at: "2025-05-20T00:00:00Z",
+    summary: "A demo official-source entry representing lab announcements collected from RSS feeds.",
+    notes: "demo article",
+    created_at: "2025-05-20T00:00:00Z",
+  },
+];

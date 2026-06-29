@@ -44,3 +44,17 @@ export interface FieldMetric {
   source_url?: string | null;
   notes?: string | null;
 }
+
+export interface Article {
+  id: string;
+  title: string;
+  url: string;
+  source: string;
+  category: "trending" | "research" | "official";
+  author: string | null;
+  score: number | null;
+  published_at: string | null;
+  summary: string | null;
+  notes: string | null;
+  created_at: string;
+}
