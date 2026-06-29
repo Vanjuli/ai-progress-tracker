@@ -48,6 +48,9 @@ export function BenchmarkPage() {
               Reference ↗
             </a>
           )}
+          <a href="https://epoch.ai" target="_blank" rel="noreferrer">
+            Benchmark data includes Epoch AI (CC-BY) where available ↗
+          </a>
           <span className="spacer" />
           <Link className="btn btn-primary" to={`/submit?benchmark=${b.slug}`}>
             + Add a data point

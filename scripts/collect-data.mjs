@@ -3,8 +3,8 @@
 /**
  * Automated data collector for AI Progress Tracker.
  *
- * Runtime: Node 20+ ESM. Uses global fetch and the existing @supabase/supabase-js
- * dependency when real database writes are enabled.
+ * Runtime: Node 22+ ESM. Uses global fetch, @supabase/supabase-js, and small
+ * CSV/ZIP helpers to collect benchmark data from Epoch AI.
  *
  * Safety defaults:
  * - No SUPABASE_SERVICE_ROLE_KEY => dry-run, no writes.
@@ -13,9 +13,14 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import {
+  EPOCH_AUTO_MARKER,
+  EPOCH_BENCHMARK_SPECS,
+  EPOCH_DATASET_URL,
+  collectEpochBenchmarkRows,
+} from "./epoch-benchmarks.mjs";
 
 const AUTO_MARKER = "auto-collected:arxiv-popularity";
-const BENCHMARK_AUTO_MARKER = "auto-collected:benchmark";
 const ARXIV_API_URL = "https://export.arxiv.org/api/query";
 const ARXIV_REQUEST_HEADERS = {
   "User-Agent": "AIProgressTracker/1.0 (+https://aiprogresstracker.org)",
@@ -148,19 +153,19 @@ async function collectPopularityRows() {
 }
 
 async function collectBenchmarkRows() {
-  // Researched source options (2026-06): the seeded benchmark URLs mostly point
-  // to Papers with Code SOTA pages. Requests to the former Papers with Code API
-  // endpoints and SOTA pages currently redirect to Hugging Face Papers, and HF
-  // Papers does not expose a clean free API that maps these benchmark leaderboards
-  // to stable model/score/date/source rows. Other benchmark sites vary by task
-  // and do not cover the project's exact seeded benchmark set uniformly.
-  //
-  // Accuracy is more important than coverage, so this intentionally returns no
-  // rows instead of scraping brittle pages or fabricating benchmark values.
+  console.log(`[epoch] downloading benchmark dataset: ${EPOCH_DATASET_URL}`);
+  const { rows, fileSummaries } = await collectEpochBenchmarkRows();
   console.log(
-    `[benchmarks] ${BENCHMARK_AUTO_MARKER}: no reliable free public API/source currently maps cleanly to the seeded benchmarks; manual source needed.`
+    `[epoch] mapped ${rows.length} benchmark rows from ${fileSummaries.length} files: ${fileSummaries
+      .map((summary) => `${summary.benchmark_slug}=${summary.mapped_rows}/${summary.input_rows}`)
+      .join(", ")}`
   );
-  return [];
+  console.log(
+    `[epoch] covered fields: ${[...new Set(EPOCH_BENCHMARK_SPECS.map((spec) => spec.fieldSlug))].join(
+      ", "
+    )}; not covered by mapped Epoch benchmark data: vision, speech`
+  );
+  return rows;
 }
 
 function createSupabaseClient() {
@@ -175,21 +180,31 @@ async function loadFieldsBySlug(supabase) {
   return new Map(data.map((field) => [field.slug, field]));
 }
 
+function dryRunReason() {
+  return [
+    !SUPABASE_URL ? "missing SUPABASE_URL" : "",
+    !SUPABASE_SERVICE_ROLE_KEY ? "missing SUPABASE_SERVICE_ROLE_KEY" : "",
+    process.env.DRY_RUN ? `DRY_RUN=${process.env.DRY_RUN}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
 function logPlannedRow(row, reason = "would upsert") {
   console.log(
     `[dry-run] ${reason}: field=${row.field_slug} metric=${row.metric_key} period=${row.period} value=${row.value} ${row.unit} status=${row.status} protected=${row.protected} source_url=${row.source_url} notes="${row.notes}"`
   );
 }
 
+function logPlannedBenchmarkRow(row, reason = "would upsert") {
+  console.log(
+    `[dry-run] ${reason}: benchmark=${row.benchmark_slug} field=${row.field_slug} model="${row.model_name}" date=${row.achieved_on} score=${row.score}${row.unit} status=${row.status} protected=${row.protected} source_url=${row.source_url} notes="${row.notes}"`
+  );
+}
+
 async function writePopularityRows(rows) {
   if (DRY_RUN) {
-    console.log(
-      `[mode] DRY-RUN: database writes disabled (${!SUPABASE_URL ? "missing SUPABASE_URL" : ""}${
-        !SUPABASE_URL && !SUPABASE_SERVICE_ROLE_KEY ? ", " : ""
-      }${!SUPABASE_SERVICE_ROLE_KEY ? "missing SUPABASE_SERVICE_ROLE_KEY" : ""}${
-        process.env.DRY_RUN ? `DRY_RUN=${process.env.DRY_RUN}` : ""
-      })`
-    );
+    console.log(`[mode] DRY-RUN: database writes disabled (${dryRunReason()})`);
     for (const row of rows) logPlannedRow(row);
     return;
   }
@@ -246,11 +261,119 @@ async function writePopularityRows(rows) {
   }
 }
 
+async function loadBenchmarksBySlug(supabase) {
+  const { data, error } = await supabase.from("benchmarks").select("id, slug, name");
+  if (error) throw error;
+  return new Map(data.map((benchmark) => [benchmark.slug, benchmark]));
+}
+
+async function ensureEpochBenchmarks(supabase, fieldsBySlug, benchmarksBySlug) {
+  for (const spec of EPOCH_BENCHMARK_SPECS) {
+    if (benchmarksBySlug.has(spec.benchmarkSlug)) continue;
+
+    const field = fieldsBySlug.get(spec.fieldSlug);
+    if (!field) {
+      console.warn(`[skip] benchmark=${spec.benchmarkSlug}: no matching Supabase field ${spec.fieldSlug}`);
+      continue;
+    }
+
+    const payload = {
+      field_id: field.id,
+      slug: spec.benchmarkSlug,
+      name: spec.name,
+      description: spec.description,
+      unit: spec.unit,
+      higher_is_better: spec.higherIsBetter,
+      source_url: EPOCH_DATASET_URL,
+    };
+
+    const { data, error } = await supabase.from("benchmarks").insert(payload).select("id, slug, name").single();
+    if (error) throw error;
+    benchmarksBySlug.set(data.slug, data);
+    console.log(`[write] inserted benchmark definition: benchmark=${data.slug} field=${spec.fieldSlug}`);
+  }
+}
+
+async function writeBenchmarkRows(rows) {
+  if (DRY_RUN) {
+    for (const spec of EPOCH_BENCHMARK_SPECS) {
+      console.log(
+        `[dry-run] would ensure benchmark: slug=${spec.benchmarkSlug} field=${spec.fieldSlug} name="${spec.name}" source_url=${EPOCH_DATASET_URL}`
+      );
+    }
+    for (const row of rows) logPlannedBenchmarkRow(row);
+    return;
+  }
+
+  const supabase = createSupabaseClient();
+  const fieldsBySlug = await loadFieldsBySlug(supabase);
+  const benchmarksBySlug = await loadBenchmarksBySlug(supabase);
+  await ensureEpochBenchmarks(supabase, fieldsBySlug, benchmarksBySlug);
+
+  for (const row of rows) {
+    const benchmark = benchmarksBySlug.get(row.benchmark_slug);
+    if (!benchmark) {
+      console.warn(`[skip] benchmark=${row.benchmark_slug}: no matching Supabase benchmark row`);
+      continue;
+    }
+
+    const { data: existingRows, error: readError } = await supabase
+      .from("data_points")
+      .select("id, notes")
+      .eq("benchmark_id", benchmark.id)
+      .eq("model_name", row.model_name)
+      .eq("achieved_on", row.achieved_on);
+
+    if (readError) throw readError;
+
+    const epochExisting = (existingRows ?? []).find((existing) =>
+      String(existing.notes ?? "").includes(EPOCH_AUTO_MARKER)
+    );
+
+    if (!epochExisting && (existingRows ?? []).length > 0) {
+      console.log(
+        `[skip] benchmark=${row.benchmark_slug} model="${row.model_name}" date=${row.achieved_on}: existing data point is not marked ${EPOCH_AUTO_MARKER}; leaving human-curated value untouched.`
+      );
+      continue;
+    }
+
+    const payload = {
+      benchmark_id: benchmark.id,
+      model_name: row.model_name,
+      organization: row.organization,
+      score: row.score,
+      achieved_on: row.achieved_on,
+      source_url: row.source_url,
+      notes: row.notes,
+      status: row.status,
+      protected: row.protected,
+      vote_score: 3,
+      submitted_by: null,
+    };
+
+    if (epochExisting) {
+      const { error: updateError } = await supabase
+        .from("data_points")
+        .update(payload)
+        .eq("id", epochExisting.id);
+      if (updateError) throw updateError;
+    } else {
+      const { error: insertError } = await supabase.from("data_points").insert(payload);
+      if (insertError) throw insertError;
+    }
+
+    console.log(
+      `[write] ${epochExisting ? "updated" : "inserted"}: benchmark=${row.benchmark_slug} model="${row.model_name}" date=${row.achieved_on} score=${row.score}${row.unit}`
+    );
+  }
+}
+
 async function main() {
   console.log("AI Progress Tracker automated data collector");
   const popularityRows = await collectPopularityRows();
-  await collectBenchmarkRows();
+  const benchmarkRows = await collectBenchmarkRows();
   await writePopularityRows(popularityRows);
+  await writeBenchmarkRows(benchmarkRows);
   console.log("Done.");
 }
 
