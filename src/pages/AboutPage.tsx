@@ -10,13 +10,13 @@ export function AboutPage() {
         speech. The goal is a broad, honest view of progress — not one lab's marketing.
       </p>
 
-      <h2>How verification works</h2>
+      <h2>How the data is collected</h2>
       <p className="muted">
-        Anyone signed in can submit a data point (a model's score on a benchmark, with a
-        date and ideally a source). New submissions are <em>pending</em> and don't appear
-        on charts. The community then votes: enough net up-votes promote a submission to{" "}
-        <strong>verified</strong> (it goes public); enough down-votes mark it{" "}
-        <strong>rejected</strong>. This keeps the dataset broad while filtering out errors.
+        The frontend is read-only. Benchmark rows are curated from linked public sources,
+        and benchmark coverage is automatically supplemented from Epoch AI where available.
+        Field popularity is automatically collected from arXiv category counts. Market-value
+        figures come from Grand View Research reports, with intermediate forecast years
+        interpolated where noted.
       </p>
 
       <h2>Popularity & market value</h2>
@@ -29,18 +29,18 @@ export function AboutPage() {
 
       <h2>A note on the data</h2>
       <p className="muted">
-        Benchmark figures are real and sourced (each links to a paper or model card),
-        though some recent ones on saturated benchmarks come from third parties.{" "}
-        <strong>Market-value</strong> figures are sourced from Grand View Research market
-        reports (current size plus forecast, with intermediate years interpolated).{" "}
-        <strong>Popularity</strong> is a research-activity proxy: annual submission counts
-        to each field's main arXiv category (cs.CL, cs.CV, cs.SE, eess.AS), pulled from the
-        arXiv API. Always check original sources before relying on a number.
+        Benchmark figures link to their source papers, model cards, reports, or datasets;
+        some recent values on saturated benchmarks come from third-party aggregators or
+        Epoch AI's benchmark dataset. <strong>Market-value</strong> figures are sourced from
+        Grand View Research market reports. <strong>Popularity</strong> is a research-activity
+        proxy: annual submission counts to each field's main arXiv category (cs.CL, cs.CV,
+        cs.SE, eess.AS), pulled from the arXiv API. Always check original sources before
+        relying on a number.
       </p>
 
       <div className="row" style={{ marginTop: 18 }}>
-        <Link className="btn btn-primary" to="/submit">
-          Contribute data
+        <Link className="btn btn-primary" to="/compare">
+          Compare fields
         </Link>
         <Link className="btn" to="/">
           Back to dashboard

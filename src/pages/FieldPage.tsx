@@ -136,8 +136,7 @@ export function FieldPage() {
           <p className="small muted" style={{ marginTop: 8 }}>
             Market value: Grand View Research (size &amp; forecast). Popularity: annual
             arXiv submissions in the field's main category — a research-activity proxy.
-            See the <Link to="/about">About</Link> page ·{" "}
-            <Link to={`/submit?metric=market_value&field=${f.slug}`}>Suggest a figure</Link>
+            See the <Link to="/about">About</Link> page for source details.
           </p>
         </section>
       )}

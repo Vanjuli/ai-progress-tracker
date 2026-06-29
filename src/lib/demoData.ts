@@ -81,48 +81,10 @@ const verified: DataPoint[] = seedPoints.map((p, i) => ({
   achieved_on: p.date,
   source_url: p.src,
   notes: p.note,
-  submitted_by: null,
-  status: "verified",
-  vote_score: 3,
-  protected: true,
   created_at: p.date + "T00:00:00Z",
 }));
 
-// A couple of community submissions awaiting verification, to demonstrate voting.
-const pending: DataPoint[] = [
-  {
-    id: "d-pending-1",
-    benchmark_id: "b-mmlu",
-    model_name: "Llama 3.1 405B",
-    organization: "Meta",
-    score: 88.6,
-    achieved_on: "2024-07-23",
-    source_url: "https://ai.meta.com/blog/meta-llama-3-1/",
-    notes: "Reported in the Llama 3.1 release.",
-    submitted_by: null,
-    status: "pending",
-    vote_score: 1,
-    protected: false,
-    created_at: "2024-07-24T00:00:00Z",
-  },
-  {
-    id: "d-pending-2",
-    benchmark_id: "b-humaneval",
-    model_name: "DeepSeek-Coder V2",
-    organization: "DeepSeek",
-    score: 90.2,
-    achieved_on: "2024-06-17",
-    source_url: "https://github.com/deepseek-ai/DeepSeek-Coder-V2",
-    notes: null,
-    submitted_by: null,
-    status: "pending",
-    vote_score: 0,
-    protected: false,
-    created_at: "2024-06-18T00:00:00Z",
-  },
-];
-
-export const demoDataPoints: DataPoint[] = [...verified, ...pending];
+export const demoDataPoints: DataPoint[] = verified;
 
 // ---- Field metrics: popularity index + market value (USD billions) --------
 // Illustrative yearly estimates (2018-2025) mirroring supabase/seed.sql.
@@ -173,10 +135,6 @@ function buildMarketValue(): FieldMetric[] {
         value,
         unit: "USD_billion",
         source_url: GVR[fieldId] ?? null,
-        status: "verified",
-        vote_score: 3,
-        protected: true,
-        submitted_by: null,
         notes: null,
       });
     }
@@ -196,10 +154,6 @@ function buildPopularity(): FieldMetric[] {
         value,
         unit: "papers",
         source_url: ARXIV[fieldId] ?? null,
-        status: "verified",
-        vote_score: 3,
-        protected: true,
-        submitted_by: null,
         notes: null,
       });
     });
@@ -208,37 +162,3 @@ function buildPopularity(): FieldMetric[] {
 }
 
 export const demoFieldMetrics: FieldMetric[] = [...buildMarketValue(), ...buildPopularity()];
-
-// A couple of community metric submissions awaiting verification (demo mode), to
-// demonstrate the submit/vote flow — e.g. proposing a market value for Mathematics
-// (which has no curated series) and a forward 2026 figure.
-export const demoPendingMetrics: FieldMetric[] = [
-  {
-    id: "m-pending-math-mv-2024",
-    field_id: "f-math",
-    metric_key: "market_value",
-    period: "2024-01-01",
-    value: 2.4,
-    unit: "USD_billion",
-    source_url: "https://www.marketsandmarkets.com/",
-    status: "pending",
-    vote_score: 1,
-    protected: false,
-    submitted_by: null,
-    notes: "Rough estimate for AI-for-math tooling; needs a better source.",
-  },
-  {
-    id: "m-pending-language-mv-2026",
-    field_id: "f-language",
-    metric_key: "market_value",
-    period: "2026-01-01",
-    value: 116.2,
-    unit: "USD_billion",
-    source_url: "https://www.grandviewresearch.com/industry-analysis/natural-language-processing-market-report",
-    status: "pending",
-    vote_score: 0,
-    protected: false,
-    submitted_by: null,
-    notes: "2026 interpolation from GVR forecast.",
-  },
-];

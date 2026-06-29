@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Track AI progress across fields via benchmark charts, with community-verified submissions.",
+  "description": "Track AI progress across fields with curated benchmark charts and automatically collected field data.",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
