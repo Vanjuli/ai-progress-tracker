@@ -19,9 +19,9 @@ insert into public.benchmarks (field_id, slug, name, description, unit, higher_i
   ((select id from public.fields where slug = 'language'), 'mmlu', 'MMLU', 'Massive Multitask Language Understanding (57 subjects).', '%', true, 'https://paperswithcode.com/sota/multi-task-language-understanding-on-mmlu'),
   ((select id from public.fields where slug = 'coding'),   'humaneval', 'HumanEval', 'Functional correctness of generated Python (pass@1).', '%', true, 'https://paperswithcode.com/sota/code-generation-on-humaneval'),
   ((select id from public.fields where slug = 'vision'),   'imagenet', 'ImageNet Top-1', 'Top-1 classification accuracy on ImageNet.', '%', true, 'https://paperswithcode.com/sota/image-classification-on-imagenet'),
-  ((select id from public.fields where slug = 'math'),     'gsm8k', 'GSM8K', 'Grade-school math word problems.', '%', true, 'https://paperswithcode.com/sota/arithmetic-reasoning-on-gsm8k'),
-  ((select id from public.fields where slug = 'math'),     'math-comp', 'MATH', 'Competition mathematics problems (Hendrycks et al., 2021).', '%', true, 'https://arxiv.org/abs/2103.03874'),
-  ((select id from public.fields where slug = 'math'),     'aime-2024', 'AIME 2024', 'American Invitational Mathematics Examination (2024).', '%', true, 'https://openai.com/index/learning-to-reason-with-llms/'),
+  ((select id from public.fields where slug = 'math'),     'gsm8k', 'GSM8K', 'Grade-school math word problems (GSM8K); distinct from the competition-math MATH and AIME-style benchmarks.', '%', true, 'https://paperswithcode.com/sota/arithmetic-reasoning-on-gsm8k'),
+  ((select id from public.fields where slug = 'math'),     'math-comp', 'MATH', 'The full Hendrycks MATH competition-math benchmark across all difficulty levels; distinct from the Epoch MATH Level 5 subset.', '%', true, 'https://arxiv.org/abs/2103.03874'),
+  ((select id from public.fields where slug = 'math'),     'aime-2024', 'AIME 2024', 'The official 2024 American Invitational Mathematics Examination (AIME), not a mock AIME-style benchmark.', '%', true, 'https://openai.com/index/learning-to-reason-with-llms/'),
   ((select id from public.fields where slug = 'speech'),   'librispeech', 'LibriSpeech WER', 'Word error rate on LibriSpeech test-clean (lower is better).', '% WER', false, 'https://paperswithcode.com/sota/speech-recognition-on-librispeech-test-clean')
 on conflict (field_id, slug) do nothing;
 
