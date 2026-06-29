@@ -10,7 +10,9 @@ import {
 } from "recharts";
 import { Field, FieldMetric } from "../lib/types";
 import { yearOf } from "../lib/format";
-import { isYearToDate } from "../lib/metrics";
+import { isYearToDate, logScaleDomain, logScaleValue } from "../lib/metrics";
+
+export type YScale = "linear" | "log";
 
 interface Props {
   fields: Field[]; // the selected fields to plot
@@ -18,10 +20,11 @@ interface Props {
   valueFormatter: (v: number) => string;
   height?: number;
   markYearToDate?: boolean;
+  yScale?: YScale;
 }
 
 /** One line per field, sharing a year x-axis — for cross-field comparison. */
-export function MultiLineChart({ fields, metrics, valueFormatter, height = 360, markYearToDate }: Props) {
+export function MultiLineChart({ fields, metrics, valueFormatter, height = 360, markYearToDate, yScale = "linear" }: Props) {
   if (fields.length === 0) return <p className="muted small">Select at least one field to compare.</p>;
 
   const years = Array.from(new Set(metrics.map((m) => yearOf(m.period)))).sort((a, b) => a - b);
@@ -34,9 +37,18 @@ export function MultiLineChart({ fields, metrics, valueFormatter, height = 360, 
       year,
       ytd: !!markYearToDate && metrics.some((m) => yearOf(m.period) === year && isYearToDate(m.period)),
     };
-    for (const f of fields) row[f.slug] = valueAt(f.id, year);
+    for (const f of fields) {
+      const value = valueAt(f.id, year);
+      row[f.slug] = yScale === "log" ? logScaleValue(value) : value;
+    }
     return row;
   });
+
+  const yValues = rows.flatMap((row) => fields.map((f) => row[f.slug] as number | null));
+  const yAxisProps =
+    yScale === "log"
+      ? { scale: "log" as const, domain: logScaleDomain(yValues), allowDataOverflow: false }
+      : {};
 
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -51,7 +63,7 @@ export function MultiLineChart({ fields, metrics, valueFormatter, height = 360, 
             return row?.ytd ? `${y} YTD` : String(y);
           }}
         />
-        <YAxis stroke="var(--chart-axis)" fontSize={12} width={58} tickFormatter={valueFormatter} />
+        <YAxis stroke="var(--chart-axis)" fontSize={12} width={58} tickFormatter={valueFormatter} {...yAxisProps} />
         <Tooltip
           contentStyle={{
             background: "var(--bg-elev)",

@@ -42,6 +42,31 @@ export function isYearToDate(period: string, now = new Date()): boolean {
   return date.getUTCFullYear() === now.getUTCFullYear();
 }
 
+/** Recharts log scales can only plot finite positive numbers. */
+export function logScaleValue(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
+  return value;
+}
+
+/**
+ * A stable positive domain for log charts. Falls back to a small generic range
+ * when every selected point is zero, negative, or missing.
+ */
+export function logScaleDomain(values: Array<number | null | undefined>): [number, number] {
+  const positives = values.filter((v): v is number => logScaleValue(v) !== null);
+  if (positives.length === 0) return [1, 10];
+
+  const min = Math.min(...positives);
+  const max = Math.max(...positives);
+  let lower = Math.pow(10, Math.floor(Math.log10(min)));
+  let upper = Math.pow(10, Math.ceil(Math.log10(max)));
+  if (lower === upper) {
+    lower /= 10;
+    upper *= 10;
+  }
+  return [lower, upper];
+}
+
 export interface GrowthOptions {
   /** Exclude the current in-progress year so YTD data is not compared to full prior years. */
   excludeYearToDate?: boolean;
