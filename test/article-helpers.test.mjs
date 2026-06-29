@@ -8,6 +8,8 @@ import {
   parseFeedEntries,
   parseArxivEntries,
   newestByCategory,
+  classifyTopics,
+  selectArticlesForPrune,
 } from "../scripts/article-helpers.mjs";
 
 describe("article collection helpers", () => {
@@ -60,6 +62,7 @@ describe("article collection helpers", () => {
         source: "hackernews",
         title: "New AI accelerator reaches production",
         url: "https://example.com/ai-accelerator",
+        topics: ["Hardware/Chips"],
         score: 256,
         author: "erin",
       }),
@@ -68,6 +71,7 @@ describe("article collection helpers", () => {
         source: "hackernews",
         title: "New transformer model improves robot planning",
         url: "https://example.com/robot-transformer",
+        topics: ["Language/NLP", "Robotics", "Agents"],
         score: 128,
         author: "alice",
       }),
@@ -84,6 +88,7 @@ describe("article collection helpers", () => {
         source: "rss-openai",
         title: "OpenAI news",
         url: "https://openai.com/news",
+        topics: ["General"],
         author: "OpenAI",
         summary: "Short summary",
         published_at: "2026-06-29T10:00:00.000Z",
@@ -95,6 +100,7 @@ describe("article collection helpers", () => {
         source: "rss-deepmind",
         title: "DeepMind update",
         url: "https://deepmind.google/discover/blog/update",
+        topics: ["General"],
         published_at: "2026-06-28T09:00:00.000Z",
       }),
     ]);
@@ -110,6 +116,7 @@ describe("article collection helpers", () => {
         source: "arxiv",
         title: "A Neural Approach to Tests",
         url: "https://arxiv.org/abs/2606.12345v1",
+        topics: ["Research/Theory"],
         author: "Ada Lovelace, Grace Hopper",
         published_at: "2026-06-27T00:00:00.000Z",
         summary: "Paper abstract",
@@ -140,5 +147,38 @@ describe("article collection helpers", () => {
       "newest official",
       "older official",
     ]);
+  });
+
+  it("classifies articles into one or more fixed topics and falls back to General", () => {
+    expect(classifyTopics("GPT-4o vision and speech agents", "multimodal tool use for developers")).toEqual([
+      "Language/NLP",
+      "Vision",
+      "Audio/Speech",
+      "Agents",
+      "Multimodal",
+      "Tools/Dev",
+    ]);
+    expect(classifyTopics("AI chip startup raises Series B", "new GPU accelerator funding round")).toEqual([
+      "Hardware/Chips",
+      "Business/Funding",
+    ]);
+    expect(classifyTopics("A gardening note", "unrelated essay")).toEqual(["General"]);
+  });
+
+  it("selects prune candidates by age and per-category newest limits using published_at with created_at fallback", () => {
+    const now = new Date("2026-06-29T00:00:00Z");
+    const rows = [
+      { id: "old-published", category: "trending", title: "old", published_at: "2026-04-01T00:00:00Z", created_at: "2026-06-28T00:00:00Z" },
+      { id: "fallback-old", category: "research", title: "fallback old", published_at: null, created_at: "2026-04-15T00:00:00Z" },
+      { id: "keep-newest", category: "official", title: "newest", published_at: "2026-06-28T00:00:00Z", created_at: "2026-06-28T00:00:00Z" },
+      { id: "keep-second", category: "official", title: "second", published_at: null, created_at: "2026-06-27T00:00:00Z" },
+      { id: "surplus-third", category: "official", title: "third", published_at: "2026-06-26T00:00:00Z", created_at: "2026-06-26T00:00:00Z" },
+    ];
+
+    const candidates = selectArticlesForPrune(rows, { now, retentionDays: 60, limitPerCategory: 2 });
+
+    expect(candidates.map((article) => article.id)).toEqual(["old-published", "fallback-old", "surplus-third"]);
+    expect(candidates.find((article) => article.id === "old-published")?.prune_reasons).toEqual(["older-than-60-days"]);
+    expect(candidates.find((article) => article.id === "surplus-third")?.prune_reasons).toEqual(["category-surplus"]);
   });
 });

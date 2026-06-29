@@ -13,11 +13,13 @@ import https from "node:https";
 import { createClient } from "@supabase/supabase-js";
 import {
   ARTICLE_AUTO_MARKER,
+  classifyTopics,
   dedupeArticlesByUrl,
   filterRecentTrendingStories,
   newestByCategory,
   parseArxivEntries,
   parseFeedEntries,
+  selectArticlesForPrune,
 } from "./article-helpers.mjs";
 
 const SUPABASE_URL = process.env.SUPABASE_URL?.trim();
@@ -26,6 +28,7 @@ const DRY_RUN = isDryRun();
 const HN_MIN_POINTS = Number(process.env.HN_MIN_POINTS ?? 50);
 const HN_QUERY_TERMS = ["AI", "LLM", "GPT", "neural", "machine learning", "diffusion", "transformer"];
 const CATEGORY_LIMIT = Number(process.env.ARTICLE_CATEGORY_LIMIT ?? 30);
+const RETENTION_DAYS = Number(process.env.ARTICLE_RETENTION_DAYS ?? 60);
 const ARXIV_API_URL = "https://export.arxiv.org/api/query";
 const ARXIV_CATEGORIES = ["cs.AI", "cs.LG", "cs.CL", "cs.CV", "cs.RO", "stat.ML"];
 const ARXIV_REQUEST_HEADERS = {
@@ -205,6 +208,7 @@ function payloadForArticle(article) {
     url: article.url,
     source: article.source,
     category: article.category,
+    topics: article.topics ?? classifyTopics(article.title, article.summary),
     author: article.author ?? null,
     score: article.score ?? null,
     published_at: article.published_at ?? null,
@@ -215,26 +219,69 @@ function payloadForArticle(article) {
   };
 }
 
+function createSupabaseServiceClient() {
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 function logPlannedArticle(article, reason = "would upsert") {
-  console.log(`[dry-run] ${reason}: category=${article.category} source=${article.source} published_at=${article.published_at ?? ""} score=${article.score ?? ""} title="${article.title}" url=${article.url}`);
+  console.log(`[dry-run] ${reason}: category=${article.category} topics=${(article.topics ?? []).join("|")} source=${article.source} published_at=${article.published_at ?? ""} score=${article.score ?? ""} title="${article.title}" url=${article.url}`);
 }
 
 async function writeArticles(articles) {
   if (DRY_RUN) {
     console.log(`[mode] DRY-RUN: database writes disabled (${dryRunReason()})`);
-    for (const article of articles) logPlannedArticle(article);
+    for (const article of articles) logPlannedArticle(payloadForArticle(article));
     return;
   }
 
   console.log(`[mode] LIVE: upserting ${articles.length} articles to Supabase`);
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const supabase = createSupabaseServiceClient();
   const { error } = await supabase
     .from("articles")
     .upsert(articles.map(payloadForArticle), { onConflict: "url" });
   if (error) throw error;
   console.log(`[write] upserted ${articles.length} articles`);
+}
+
+async function pruneArticles() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.log(`[prune] skipped: ${dryRunReason()}`);
+    return;
+  }
+
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("articles")
+    .select("id,title,url,category,published_at,created_at,notes")
+    .ilike("notes", `%${ARTICLE_AUTO_MARKER}%`);
+  if (error) throw error;
+
+  const candidates = selectArticlesForPrune(data ?? [], {
+    retentionDays: RETENTION_DAYS,
+    limitPerCategory: CATEGORY_LIMIT,
+  });
+
+  if (candidates.length === 0) {
+    console.log(`[prune] no auto-collected articles selected for pruning`);
+    return;
+  }
+
+  if (DRY_RUN) {
+    console.log(`[prune] DRY-RUN: would delete ${candidates.length} auto-collected articles`);
+    for (const article of candidates) {
+      console.log(`[dry-run] would prune: reasons=${article.prune_reasons.join("|")} category=${article.category} published_at=${article.published_at ?? ""} title="${article.title}" url=${article.url}`);
+    }
+    return;
+  }
+
+  const { error: deleteError } = await supabase
+    .from("articles")
+    .delete()
+    .in("id", candidates.map((article) => article.id));
+  if (deleteError) throw deleteError;
+  console.log(`[prune] deleted ${candidates.length} auto-collected articles`);
 }
 
 function logCategorySamples(articles) {
@@ -258,7 +305,8 @@ async function main() {
   const articles = newestByCategory(dedupeArticlesByUrl([...trending, ...research, ...official]), CATEGORY_LIMIT);
   console.log(`[collect] total normalized articles after de-dupe/cap: ${articles.length}`);
   logCategorySamples(articles);
-  await writeArticles(articles.map(payloadForArticle));
+  await writeArticles(articles);
+  await pruneArticles();
   console.log("Done.");
 }
 

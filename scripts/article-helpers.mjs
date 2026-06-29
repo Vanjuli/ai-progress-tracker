@@ -21,6 +21,34 @@ export const AI_KEYWORDS = [
   "reinforcement learning",
 ];
 
+export const ARTICLE_TOPICS = [
+  "Language/NLP",
+  "Vision",
+  "Audio/Speech",
+  "Robotics",
+  "Agents",
+  "Multimodal",
+  "Hardware/Chips",
+  "Safety/Policy",
+  "Business/Funding",
+  "Tools/Dev",
+  "Research/Theory",
+];
+
+const TOPIC_RULES = [
+  ["Language/NLP", ["llm", "llms", "language model", "nlp", "natural language", "gpt", "claude", "gemini", "llama", "mistral", "token", "embedding", "transformer", "rag", "chatbot"]],
+  ["Vision", ["vision", "computer vision", "image", "video", "diffusion", "segmentation", "detection", "recognition", "visual", "imagenet", "camera", "ocr"]],
+  ["Audio/Speech", ["audio", "speech", "voice", "whisper", "transcription", "text-to-speech", "tts", "asr", "music", "sound", "speaker"]],
+  ["Robotics", ["robot", "robotic", "robotics", "humanoid", "embodied", "manipulation", "navigation", "drone", "autonomous vehicle", "self-driving"]],
+  ["Agents", ["agent", "agents", "agentic", "tool use", "tool-use", "workflow", "autonomous", "planning", "browser", "computer use"]],
+  ["Multimodal", ["multimodal", "multi-modal", "vision-language", "vlm", "image-text", "text-to-image", "text to image", "video-language", "gpt-4o", "omni"]],
+  ["Hardware/Chips", ["chip", "chips", "gpu", "tpu", "npu", "accelerator", "semiconductor", "hardware", "inference server", "cuda", "h100", "gb200", "wafer"]],
+  ["Safety/Policy", ["safety", "alignment", "policy", "regulation", "regulatory", "governance", "risk", "eval", "evaluation", "guardrail", "jailbreak", "copyright", "privacy"]],
+  ["Business/Funding", ["startup", "funding", "raises", "raised", "series a", "series b", "series c", "valuation", "revenue", "acquisition", "acquires", "investment", "market", "business"]],
+  ["Tools/Dev", ["developer", "developers", "code", "coding", "programming", "github", "api", "sdk", "tool", "tools", "dev", "ide", "cli", "framework", "library"]],
+  ["Research/Theory", ["research", "paper", "arxiv", "theory", "theoretical", "benchmark", "algorithm", "architecture", "training", "reinforcement learning", "rl", "reasoning", "math", "mathematical"]],
+];
+
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "@_",
@@ -46,6 +74,20 @@ export function textValue(value) {
 
 export function normalizeWhitespace(value) {
   return textValue(value).replace(/\s+/g, " ").trim();
+}
+
+function includesKeyword(text, keyword) {
+  const escaped = keyword.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(text);
+}
+
+export function classifyTopics(title, summary = "") {
+  const text = normalizeWhitespace(`${textValue(title)} ${textValue(summary)}`).toLowerCase();
+  if (!text) return ["General"];
+  const topics = TOPIC_RULES
+    .filter(([, keywords]) => keywords.some((keyword) => includesKeyword(text, keyword)))
+    .map(([topic]) => topic);
+  return topics.length > 0 ? topics : ["General"];
 }
 
 export function parseDateIso(value) {
@@ -75,10 +117,7 @@ export function normalizeUrl(rawUrl) {
 
 export function titleHasAiKeyword(title, keywords = AI_KEYWORDS) {
   const lower = normalizeWhitespace(title).toLowerCase();
-  return keywords.some((keyword) => {
-    const escaped = keyword.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(lower);
-  });
+  return keywords.some((keyword) => includesKeyword(lower, keyword));
 }
 
 export function categorizeSource(source) {
@@ -110,6 +149,7 @@ export function filterRecentTrendingStories(stories, options = {}) {
         url,
         source: "hackernews",
         category: "trending",
+        topics: classifyTopics(title),
         author: textValue(story.author) || null,
         score: Number.isFinite(points) ? points : null,
         published_at: publishedAt,
@@ -149,6 +189,7 @@ export function parseArxivEntries(xml) {
         url: link,
         source: "arxiv",
         category: "research",
+        topics: classifyTopics(title, entry.summary),
         author: authors.join(", ") || null,
         score: null,
         published_at: parseDateIso(entry.published ?? entry.updated),
@@ -172,6 +213,7 @@ export function parseFeedEntries(xml, feed) {
     url: normalizeUrl(item.link?.["#text"] ?? item.link),
     source,
     category: "official",
+    topics: classifyTopics(item.title, item.description ?? item.summary ?? item["content:encoded"]),
     author: sourceName,
     score: null,
     published_at: parseDateIso(item.pubDate ?? item.published ?? item.date ?? item["dc:date"]),
@@ -184,6 +226,7 @@ export function parseFeedEntries(xml, feed) {
     url: normalizeUrl(bestAtomLink(entry) || entry.id),
     source,
     category: "official",
+    topics: classifyTopics(entry.title, entry.summary ?? entry.content),
     author: sourceName,
     score: null,
     published_at: parseDateIso(entry.published ?? entry.updated),
@@ -225,4 +268,35 @@ export function newestByCategory(articles, limitPerCategory = 30) {
     );
   }
   return out;
+}
+
+function articleTime(article) {
+  return Date.parse(article.published_at ?? article.created_at ?? "") || 0;
+}
+
+export function selectArticlesForPrune(articles, options = {}) {
+  const now = options.now ?? new Date();
+  const retentionDays = Number(options.retentionDays ?? 60);
+  const limitPerCategory = Number(options.limitPerCategory ?? 30);
+  const cutoff = now.getTime() - retentionDays * 24 * 60 * 60 * 1000;
+  const surplusIds = new Set();
+
+  for (const category of ["trending", "research", "official"]) {
+    [...articles]
+      .filter((article) => article.category === category)
+      .sort((a, b) => articleTime(b) - articleTime(a))
+      .slice(limitPerCategory)
+      .forEach((article) => surplusIds.add(article.id));
+  }
+
+  return articles
+    .map((article) => {
+      const reasons = [];
+      const time = articleTime(article);
+      if (time > 0 && time < cutoff) reasons.push(`older-than-${retentionDays}-days`);
+      if (surplusIds.has(article.id)) reasons.push("category-surplus");
+      return { ...article, prune_reasons: reasons };
+    })
+    .filter((article) => article.id && article.prune_reasons.length > 0)
+    .sort((a, b) => articleTime(a) - articleTime(b));
 }

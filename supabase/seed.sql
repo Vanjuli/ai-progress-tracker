@@ -148,6 +148,7 @@ create table if not exists public.articles (
   url text not null unique,
   source text not null,
   category text not null check (category in ('trending', 'research', 'official')),
+  topics text[] not null default '{}',
   author text null,
   score numeric null,
   published_at timestamptz null,
@@ -155,6 +156,8 @@ create table if not exists public.articles (
   notes text,
   created_at timestamptz not null default now()
 );
+
+alter table public.articles add column if not exists topics text[] not null default '{}';
 
 alter table public.articles enable row level security;
 
@@ -167,3 +170,6 @@ create policy "Public read articles"
 
 create index if not exists articles_category_published_at_idx
   on public.articles (category, published_at desc nulls last);
+
+create index if not exists articles_topics_idx
+  on public.articles using gin (topics);
