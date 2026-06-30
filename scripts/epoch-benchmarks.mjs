@@ -94,6 +94,28 @@ export const EPOCH_BENCHMARK_SPECS = [
     scoreColumn: "Percent correct",
     scoreScale: "percent",
   },
+  {
+    fieldSlug: "vision",
+    benchmarkSlug: "video-mme",
+    name: "Video-MME",
+    description: "Multimodal video-understanding benchmark (accuracy on video QA without subtitles).",
+    unit: "%",
+    higherIsBetter: true,
+    filename: "video_mme_external.csv",
+    scoreColumn: "Overall (no subtitles)",
+    scoreScale: "fraction",
+  },
+  {
+    fieldSlug: "vision",
+    benchmarkSlug: "vpct",
+    name: "VPCT",
+    description: "Visual Physics Comprehension Test — visual reasoning about physical scenes.",
+    unit: "%",
+    higherIsBetter: true,
+    filename: "vpct_external.csv",
+    scoreColumn: "Correct",
+    scoreScale: "fraction",
+  },
 ];
 
 export function parseCsv(text) {

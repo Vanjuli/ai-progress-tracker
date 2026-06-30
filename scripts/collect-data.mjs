@@ -175,7 +175,7 @@ async function collectBenchmarkRows() {
   console.log(
     `[epoch] covered fields: ${[...new Set(EPOCH_BENCHMARK_SPECS.map((spec) => spec.fieldSlug))].join(
       ", "
-    )}; not covered by mapped Epoch benchmark data: vision, speech`
+    )}; not covered by mapped Epoch benchmark data: speech`
   );
   return rows;
 }
