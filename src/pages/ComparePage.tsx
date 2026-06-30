@@ -4,6 +4,8 @@ import { useAsync } from "../lib/useAsync";
 import { MultiLineChart, YScale } from "../components/MultiLineChart";
 import { MetricKey } from "../lib/types";
 import { formatUsdBillions } from "../lib/format";
+import { Seo } from "../components/Seo";
+import { pageTitle } from "../lib/seoText";
 
 export function ComparePage() {
   const fields = useAsync(() => api.getFields(), []);
@@ -39,6 +41,12 @@ export function ComparePage() {
 
   return (
     <>
+      <Seo
+        title={pageTitle("Compare AI fields by market value and research activity")}
+        description="Compare AI fields on one chart, including market value and arXiv research activity trends for language, coding, vision, math, and speech."
+        path="/compare"
+        breadcrumbs={[{ name: "Home", url: "/" }, { name: "Compare", url: "/compare" }]}
+      />
       <section className="hero" style={{ paddingBottom: 12 }}>
         <h1>Compare fields</h1>
         <p>

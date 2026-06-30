@@ -4,6 +4,8 @@ import { useAsync } from "../lib/useAsync";
 import { BenchmarkChart } from "../components/BenchmarkChart";
 import { formatMonthYear, formatScore } from "../lib/format";
 import { metricExplanation, metricLabel } from "../lib/benchmarkMetric";
+import { Seo } from "../components/Seo";
+import { benchmarkSeoDescription, pageTitle } from "../lib/seoText";
 
 export function BenchmarkPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -18,9 +20,37 @@ export function BenchmarkPage() {
   const field = (fields.data ?? []).find((f) => f.id === b.field_id);
   const color = field?.color ?? "#6366f1";
   const all = points.data ?? [];
+  const benchmarkPath = `/benchmark/${b.slug}`;
+  const benchmarkJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: `${b.name} benchmark progress over time`,
+    description: benchmarkSeoDescription(b.name, b.description, b.higher_is_better),
+    url: `https://aiprogresstracker.org${benchmarkPath}`,
+    license: "https://creativecommons.org/licenses/by/4.0/",
+    creator: {
+      "@type": "Organization",
+      name: "AI Progress Tracker",
+      url: "https://aiprogresstracker.org",
+    },
+    measurementTechnique: metricExplanation(b.unit, b.higher_is_better),
+    variableMeasured: metricLabel(b.unit, b.higher_is_better),
+    isBasedOn: b.source_url ?? undefined,
+  };
 
   return (
     <>
+      <Seo
+        title={pageTitle(`${b.name} benchmark progress over time`)}
+        description={benchmarkSeoDescription(b.name, b.description, b.higher_is_better)}
+        path={benchmarkPath}
+        jsonLd={benchmarkJsonLd}
+        breadcrumbs={[
+          { name: "Home", url: "/" },
+          ...(field ? [{ name: field.name, url: `/field/${field.slug}` }] : []),
+          { name: b.name, url: benchmarkPath },
+        ]}
+      />
       <section className="hero" style={{ paddingBottom: 12 }}>
         <Link to="/" className="small muted">
           ← Dashboard

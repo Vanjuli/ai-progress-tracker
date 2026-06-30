@@ -16,6 +16,8 @@ import {
   sumByPeriod,
 } from "../lib/metrics";
 import { formatUsdBillions } from "../lib/format";
+import { Seo } from "../components/Seo";
+import { pageTitle } from "../lib/seoText";
 
 export function HomePage() {
   const fields = useAsync(() => api.getFields(), []);
@@ -71,6 +73,11 @@ export function HomePage() {
 
   return (
     <>
+      <Seo
+        title={pageTitle("Track AI benchmark and field progress over time")}
+        description="Track AI progress across language, coding, vision, math, and speech with curated benchmark charts, research activity, and market-value trends."
+        path="/"
+      />
       <section className="hero">
         <h1>Tracking AI progress from curated sources</h1>
         <p>
