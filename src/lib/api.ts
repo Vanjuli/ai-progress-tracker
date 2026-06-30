@@ -3,8 +3,15 @@
 
 import { supabase } from "./supabaseClient";
 import { isConfigured } from "./config";
-import { Article, Benchmark, DataPoint, Field, FieldMetric } from "./types";
-import { demoArticles, demoBenchmarks, demoDataPoints, demoFieldMetrics, demoFields } from "./demoData";
+import { Article, AsrRanking, Benchmark, DataPoint, Field, FieldMetric } from "./types";
+import {
+  demoArticles,
+  demoAsrRankings,
+  demoBenchmarks,
+  demoDataPoints,
+  demoFieldMetrics,
+  demoFields,
+} from "./demoData";
 
 export interface Api {
   getFields(): Promise<Field[]>;
@@ -15,6 +22,7 @@ export interface Api {
   getVerifiedPoints(benchmarkId: string): Promise<DataPoint[]>;
   getPoints(benchmarkId: string): Promise<DataPoint[]>;
   getArticles(limitPerCategory?: number): Promise<Article[]>;
+  getAsrRankings(limit?: number): Promise<AsrRanking[]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -54,6 +62,12 @@ class DemoApi implements Api {
 
   async getArticles(limitPerCategory = 5): Promise<Article[]> {
     return limitArticlesByCategory(demoArticles, limitPerCategory);
+  }
+
+  async getAsrRankings(limit = 20): Promise<AsrRanking[]> {
+    return [...demoAsrRankings]
+      .sort((a, b) => a.avg_wer - b.avg_wer || a.model.localeCompare(b.model))
+      .slice(0, limit);
   }
 }
 
@@ -128,6 +142,16 @@ class SupabaseApi implements Api {
       .limit(limitPerCategory * 3);
     if (error) throw error;
     return limitArticlesByCategory((data ?? []).map(normalizeArticle) as Article[], limitPerCategory);
+  }
+
+  async getAsrRankings(limit = 20): Promise<AsrRanking[]> {
+    const { data, error } = await this.db
+      .from("asr_rankings")
+      .select("*")
+      .order("avg_wer", { ascending: true })
+      .limit(limit);
+    if (error) throw error;
+    return data as AsrRanking[];
   }
 }
 

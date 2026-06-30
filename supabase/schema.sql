@@ -101,6 +101,21 @@ create index if not exists idx_field_metrics_field on public.field_metrics (fiel
 create index if not exists idx_field_metrics_status on public.field_metrics (status);
 create index if not exists idx_metric_votes_metric on public.metric_votes (field_metric_id);
 
+-- Current-state speech-recognition ranking from Hugging Face's Open ASR Leaderboard.
+create table if not exists public.asr_rankings (
+  id uuid primary key default gen_random_uuid(),
+  model text unique not null,
+  avg_wer numeric not null,
+  rtfx numeric null,
+  license text null,
+  datasets_count int null,
+  source_url text,
+  notes text,
+  collected_at timestamptz not null default now()
+);
+
+create index if not exists idx_asr_rankings_avg_wer on public.asr_rankings (avg_wer asc);
+
 -- ---------------------------------------------------------------------------
 -- Verification: a data point is promoted to 'verified' once its net vote
 -- score crosses a threshold, or 'rejected' when it crosses the negative.
@@ -229,6 +244,14 @@ alter table public.data_points enable row level security;
 alter table public.votes enable row level security;
 alter table public.field_metrics enable row level security;
 alter table public.metric_votes enable row level security;
+alter table public.asr_rankings enable row level security;
+
+-- Current ASR leaderboard snapshots are world-readable.
+drop policy if exists "asr_rankings_read" on public.asr_rankings;
+create policy "asr_rankings_read" on public.asr_rankings
+  for select
+  to anon, authenticated
+  using (true);
 
 -- Reference data is world-readable.
 drop policy if exists "fields_read" on public.fields;
