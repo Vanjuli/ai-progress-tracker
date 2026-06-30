@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   EPOCH_AUTO_MARKER,
+  EPOCH_BENCHMARK_SPECS,
   collectEpochBenchmarkRowsFromZip,
   mapEpochRows,
   normalizePercent,
@@ -19,6 +20,63 @@ const mmluSpec = {
 };
 
 describe("Epoch benchmark mapping", () => {
+  it("includes the mapped vision benchmarks from the Epoch dataset", () => {
+    expect(EPOCH_BENCHMARK_SPECS).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fieldSlug: "vision",
+          benchmarkSlug: "video-mme",
+          filename: "video_mme_external.csv",
+          scoreColumn: "Overall (no subtitles)",
+          scoreScale: "fraction",
+        }),
+        expect.objectContaining({
+          fieldSlug: "vision",
+          benchmarkSlug: "vpct",
+          filename: "vpct_external.csv",
+          scoreColumn: "Correct",
+          scoreScale: "fraction",
+        }),
+      ])
+    );
+  });
+
+  it("maps vision rows using Name/Model version, Release date, and fractional scores", () => {
+    const videoMmeSpec = EPOCH_BENCHMARK_SPECS.find((spec) => spec.benchmarkSlug === "video-mme");
+    const vpctSpec = EPOCH_BENCHMARK_SPECS.find((spec) => spec.benchmarkSlug === "vpct");
+
+    expect(mapEpochRows(videoMmeSpec, [
+      {
+        Name: "Video Model",
+        "Overall (no subtitles)": "0.676",
+        "Release date": "2024-09-30",
+        Source: "Video-MME Leaderboard",
+        "Source link": "https://video-mme.github.io/home_page.html#leaderboard",
+      },
+    ])[0]).toMatchObject({
+      field_slug: "vision",
+      benchmark_slug: "video-mme",
+      model_name: "Video Model",
+      achieved_on: "2024-09-30",
+      score: 67.6,
+    });
+
+    expect(mapEpochRows(vpctSpec, [
+      {
+        "Model version": "Physics Model",
+        Correct: "0.91",
+        "Release date": "2025-11-18",
+        Source: "VPCT leaderboard",
+      },
+    ])[0]).toMatchObject({
+      field_slug: "vision",
+      benchmark_slug: "vpct",
+      model_name: "Physics Model",
+      achieved_on: "2025-11-18",
+      score: 91,
+    });
+  });
+
   it("normalizes fractional and percent scores", () => {
     expect(normalizePercent("0.864", "fraction")).toBe(86.4);
     expect(normalizePercent("94.5", "percent")).toBe(94.5);
