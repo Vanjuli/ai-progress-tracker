@@ -2,7 +2,7 @@
 // Mirrors supabase/seed.sql so the preview matches the real seeded database.
 // Figures are approximate, illustrative starting points.
 
-import { Article, Benchmark, DataPoint, Field, FieldMetric } from "./types";
+import { Article, AsrRanking, Benchmark, DataPoint, Field, FieldMetric } from "./types";
 
 export const demoFields: Field[] = [
   { id: "f-language", slug: "language", name: "Language & Reasoning", description: "Knowledge, comprehension, and reasoning in large language models.", color: "#6366f1", sort_order: 1 },
@@ -163,6 +163,45 @@ function buildPopularity(): FieldMetric[] {
 
 export const demoFieldMetrics: FieldMetric[] = [...buildMarketValue(), ...buildPopularity()];
 
+
+export const demoAsrRankings: AsrRanking[] = [
+  {
+    id: "asr-1",
+    model: "nvidia/parakeet-tdt-0.6b-v2",
+    avg_wer: 5.2,
+    rtfx: 3386.4,
+    license: "cc-by-4.0",
+    datasets_count: 7,
+    source_url:
+      "https://huggingface.co/datasets/hf-audio/open-asr-leaderboard-results/resolve/main/english_short_latest.csv",
+    notes: "demo current-state ASR ranking from Hugging Face Open ASR Leaderboard",
+    collected_at: "2026-06-30T00:00:00Z",
+  },
+  {
+    id: "asr-2",
+    model: "openai/whisper-large-v3",
+    avg_wer: 8.6,
+    rtfx: 128.5,
+    license: "mit",
+    datasets_count: 7,
+    source_url:
+      "https://huggingface.co/datasets/hf-audio/open-asr-leaderboard-results/resolve/main/english_short_latest.csv",
+    notes: "demo current-state ASR ranking from Hugging Face Open ASR Leaderboard",
+    collected_at: "2026-06-30T00:00:00Z",
+  },
+  {
+    id: "asr-3",
+    model: "facebook/seamless-m4t-v2-large",
+    avg_wer: 12.4,
+    rtfx: null,
+    license: "cc-by-nc-4.0",
+    datasets_count: 6,
+    source_url:
+      "https://huggingface.co/datasets/hf-audio/open-asr-leaderboard-results/resolve/main/english_short_latest.csv",
+    notes: "demo current-state ASR ranking from Hugging Face Open ASR Leaderboard",
+    collected_at: "2026-06-30T00:00:00Z",
+  },
+];
 
 export const demoArticles: Article[] = [
   {

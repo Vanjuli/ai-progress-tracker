@@ -11,6 +11,7 @@ export function FieldPage() {
   const field = useAsync(() => api.getFieldBySlug(slug ?? ""), [slug]);
   const benchmarks = useAsync(() => api.getAllBenchmarks(), []);
   const metrics = useAsync(() => api.getFieldMetrics(), []);
+  const asrRankings = useAsync(() => (slug === "speech" ? api.getAsrRankings(15) : Promise.resolve([])), [slug]);
 
   if (field.loading) return <p className="section muted">Loading…</p>;
   if (!field.data)
@@ -138,6 +139,61 @@ export function FieldPage() {
             arXiv submissions in the field's main category — a research-activity proxy.
             See the <Link to="/about">About</Link> page for source details.
           </p>
+        </section>
+      )}
+
+
+      {f.slug === "speech" && (
+        <section className="section">
+          <div className="card stack">
+            <div className="row between" style={{ alignItems: "flex-start" }}>
+              <div>
+                <h2 style={{ marginTop: 0 }}>Current ASR Leaderboard</h2>
+                <p className="small muted" style={{ marginTop: 4 }}>
+                  Lower average WER is better. This is a current snapshot, not an over-time chart; WER is
+                  averaged across the available English short-form datasets for each model. Source: {" "}
+                  <a
+                    href="https://huggingface.co/spaces/hf-audio/open_asr_leaderboard"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Hugging Face Open ASR Leaderboard ↗
+                  </a>
+                  .
+                </p>
+              </div>
+            </div>
+            {asrRankings.loading ? (
+              <p className="muted small">Loading current ASR ranking…</p>
+            ) : asrRankings.data && asrRankings.data.length > 0 ? (
+              <div style={{ overflowX: "auto" }}>
+                <table className="leaderboard-table">
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Model</th>
+                      <th>Avg WER</th>
+                      <th>RTFx</th>
+                      <th>Datasets</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {asrRankings.data.map((row, index) => (
+                      <tr key={row.id ?? row.model}>
+                        <td>{index + 1}</td>
+                        <td>{row.model}</td>
+                        <td>{row.avg_wer.toFixed(2)}%</td>
+                        <td>{row.rtfx != null ? row.rtfx.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—"}</td>
+                        <td>{row.datasets_count ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="muted small">No current ASR leaderboard snapshot is available yet.</p>
+            )}
+          </div>
         </section>
       )}
 

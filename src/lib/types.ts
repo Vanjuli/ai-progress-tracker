@@ -45,6 +45,18 @@ export interface FieldMetric {
   notes?: string | null;
 }
 
+export interface AsrRanking {
+  id: string;
+  model: string;
+  avg_wer: number;
+  rtfx: number | null;
+  license: string | null;
+  datasets_count: number | null;
+  source_url: string | null;
+  notes: string | null;
+  collected_at: string;
+}
+
 export interface Article {
   id: string;
   title: string;

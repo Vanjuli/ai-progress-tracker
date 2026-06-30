@@ -19,6 +19,7 @@ import {
   EPOCH_DATASET_URL,
   collectEpochBenchmarkRows,
 } from "./epoch-benchmarks.mjs";
+import { OPEN_ASR_AUTO_MARKER, OPEN_ASR_LEADERBOARD_URL, fetchAsrLeaderboardRows } from "./asr-leaderboard.mjs";
 
 const AUTO_MARKER = "auto-collected:arxiv-popularity";
 const ARXIV_API_URL = "https://export.arxiv.org/api/query";
@@ -214,6 +215,28 @@ function logPlannedBenchmarkRow(row, reason = "would upsert") {
   );
 }
 
+function logPlannedAsrRow(row, reason = "would upsert") {
+  console.log(
+    `[dry-run] ${reason}: asr_rankings model="${row.model}" avg_wer=${row.avg_wer}% rtfx=${row.rtfx ?? "null"} license=${row.license ?? "null"} datasets_count=${row.datasets_count} source_url=${row.source_url} notes="${OPEN_ASR_AUTO_MARKER}"`
+  );
+}
+
+async function collectAsrRows() {
+  console.log(`[asr] downloading current Open ASR Leaderboard: ${OPEN_ASR_LEADERBOARD_URL}`);
+  const rows = await fetchAsrLeaderboardRows();
+  if (rows.length === 0) {
+    console.warn("[asr] no rows collected; skipping ASR ranking writes/deletes");
+    return rows;
+  }
+  console.log(
+    `[asr] mapped ${rows.length} current leaderboard rows; top models: ${rows
+      .slice(0, 5)
+      .map((row) => `"${row.model}"=${row.avg_wer}% WER across ${row.datasets_count} datasets`)
+      .join(", ")}`
+  );
+  return rows;
+}
+
 async function writePopularityRows(rows) {
   if (DRY_RUN) {
     console.log(`[mode] DRY-RUN: database writes disabled (${dryRunReason()})`);
@@ -406,12 +429,65 @@ async function writeBenchmarkRows(rows) {
   }
 }
 
+async function writeAsrRows(rows) {
+  if (rows.length === 0) return;
+
+  if (DRY_RUN) {
+    for (const row of rows) logPlannedAsrRow(row);
+    console.log(
+      `[dry-run] would delete from asr_rankings any ${OPEN_ASR_AUTO_MARKER} rows whose model is not in the latest ${rows.length}-model fetch`
+    );
+    return;
+  }
+
+  const supabase = createSupabaseClient();
+  const collectedAt = new Date().toISOString();
+  const payloads = rows.map((row) => ({
+    model: row.model,
+    avg_wer: row.avg_wer,
+    rtfx: row.rtfx,
+    license: row.license,
+    datasets_count: row.datasets_count,
+    source_url: row.source_url,
+    notes: OPEN_ASR_AUTO_MARKER,
+    collected_at: collectedAt,
+  }));
+
+  const { error: upsertError } = await supabase.from("asr_rankings").upsert(payloads, { onConflict: "model" });
+  if (upsertError) throw upsertError;
+  console.log(`[write] upserted ${payloads.length} current ASR ranking rows`);
+
+  const latestModels = new Set(rows.map((row) => row.model));
+  const { data: existingRows, error: readError } = await supabase
+    .from("asr_rankings")
+    .select("model, notes")
+    .eq("notes", OPEN_ASR_AUTO_MARKER);
+  if (readError) throw readError;
+
+  const staleModels = (existingRows ?? [])
+    .map((row) => row.model)
+    .filter((model) => !latestModels.has(model));
+
+  for (const model of staleModels) {
+    const { error: deleteError } = await supabase
+      .from("asr_rankings")
+      .delete()
+      .eq("model", model)
+      .eq("notes", OPEN_ASR_AUTO_MARKER);
+    if (deleteError) throw deleteError;
+  }
+
+  console.log(`[write] deleted ${staleModels.length} stale current ASR ranking rows`);
+}
+
 async function main() {
   console.log("AI Progress Tracker automated data collector");
   const popularityRows = await collectPopularityRows();
   const benchmarkRows = await collectBenchmarkRows();
+  const asrRows = await collectAsrRows();
   await writePopularityRows(popularityRows);
   await writeBenchmarkRows(benchmarkRows);
+  await writeAsrRows(asrRows);
   console.log("Done.");
 }
 
