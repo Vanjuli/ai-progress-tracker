@@ -5,6 +5,8 @@ import { BenchmarkCard } from "../components/BenchmarkCard";
 import { MetricArea } from "../components/MetricArea";
 import { fieldSeries, growthPct, isYearToDate, latestValue, startYear } from "../lib/metrics";
 import { formatGrowth, formatUsdBillions } from "../lib/format";
+import { Seo } from "../components/Seo";
+import { fieldSeoDescription, pageTitle } from "../lib/seoText";
 
 export function FieldPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -41,6 +43,12 @@ export function FieldPage() {
 
   return (
     <>
+      <Seo
+        title={pageTitle(`${f.name} AI progress benchmarks and trends`)}
+        description={fieldSeoDescription(f.name, f.description)}
+        path={`/field/${f.slug}`}
+        breadcrumbs={[{ name: "Home", url: "/" }, { name: "Fields", url: "/" }, { name: f.name, url: `/field/${f.slug}` }]}
+      />
       <section className="hero">
         <Link to="/" className="small muted">
           ← Dashboard

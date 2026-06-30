@@ -1,8 +1,17 @@
 import { Link } from "react-router-dom";
+import { Seo } from "../components/Seo";
+import { pageTitle } from "../lib/seoText";
 
 export function AboutPage() {
   return (
-    <section className="section form-narrow">
+    <>
+      <Seo
+        title={pageTitle("About the AI benchmark and field data")}
+        description="Learn how AI Progress Tracker collects benchmark results, arXiv research activity, market-value estimates, and source links for AI progress charts."
+        path="/about"
+        breadcrumbs={[{ name: "Home", url: "/" }, { name: "About", url: "/about" }]}
+      />
+      <section className="section form-narrow">
       <h1>About</h1>
       <p>
         <strong>AI Progress Tracker</strong> charts how AI systems improve over time on
@@ -46,6 +55,7 @@ export function AboutPage() {
           Back to dashboard
         </Link>
       </div>
-    </section>
+      </section>
+    </>
   );
 }
