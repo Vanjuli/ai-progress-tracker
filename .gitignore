@@ -8,3 +8,8 @@ dist
 .vercel
 
 .vercel
+
+# Agent skills (impeccable etc.) — installed locally, not part of the app
+.agents/
+.claude/skills/
+skills-lock.json
