@@ -69,8 +69,10 @@ export function BenchmarkChart({ points, unit, higherIsBetter, color, height = 2
       <div className="small muted">
         Score over time by year · {metricExplanation(unit, higherIsBetter)}
       </div>
-      <ResponsiveContainer width="100%" height={height}>
-        <LineChart data={rows} margin={{ top: 8, right: 14, bottom: 24, left: -4 }}>
+      <div className="chart-scroll">
+        <div className="chart-min" style={{ height }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={rows} margin={{ top: 8, right: 18, bottom: 26, left: 0 }}>
           <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
           <XAxis
             dataKey="t"
@@ -93,17 +95,19 @@ export function BenchmarkChart({ points, unit, higherIsBetter, color, height = 2
             />
           </YAxis>
           <Tooltip content={<ChartTooltip unit={unit} higherIsBetter={higherIsBetter} />} />
-          <Line
-            type="monotone"
-            dataKey="score"
-            stroke={color}
-            strokeWidth={2.5}
-            dot={{ r: 3, fill: color }}
-            activeDot={{ r: 5 }}
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke={color}
+                strokeWidth={2.75}
+                dot={{ r: 3, fill: color }}
+                activeDot={{ r: 5 }}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 }

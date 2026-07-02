@@ -51,8 +51,10 @@ export function MultiLineChart({ fields, metrics, valueFormatter, height = 360, 
       : {};
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={rows} margin={{ top: 8, right: 16, bottom: 0, left: 6 }}>
+    <div className="chart-scroll">
+      <div className="chart-min" style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={rows} margin={{ top: 8, right: 18, bottom: 8, left: 8 }}>
         <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
         <XAxis
           dataKey="year"
@@ -85,14 +87,16 @@ export function MultiLineChart({ fields, metrics, valueFormatter, height = 360, 
             dataKey={f.slug}
             name={f.name}
             stroke={f.color}
-            strokeWidth={2.5}
+            strokeWidth={2.75}
             dot={{ r: 2 }}
             activeDot={{ r: 5 }}
             connectNulls
             isAnimationActive={false}
           />
         ))}
-      </LineChart>
-    </ResponsiveContainer>
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }
