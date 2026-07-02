@@ -55,51 +55,55 @@ export function ComparePage() {
         </p>
       </section>
 
-      <div className="row" style={{ gap: 8, marginBottom: 14 }}>
-        <button
-          className={`btn ${metricKey === "market_value" ? "btn-primary" : ""}`}
-          onClick={() => setMetricKey("market_value")}
-        >
-          Market value
-        </button>
-        <button
-          className={`btn ${metricKey === "popularity" ? "btn-primary" : ""}`}
-          onClick={() => setMetricKey("popularity")}
-        >
-          Popularity
-        </button>
+      <div className="compare-controls" aria-label="Comparison controls">
+        <div className="row" style={{ gap: 8 }}>
+          <span className="control-label">Metric</span>
+          <button
+            className={`btn ${metricKey === "market_value" ? "btn-primary" : ""}`}
+            onClick={() => setMetricKey("market_value")}
+          >
+            Market value
+          </button>
+          <button
+            className={`btn ${metricKey === "popularity" ? "btn-primary" : ""}`}
+            onClick={() => setMetricKey("popularity")}
+          >
+            Popularity
+          </button>
+        </div>
+
+        <div className="row" style={{ gap: 8 }}>
+          <span className="control-label">Y-axis scale</span>
+          <button
+            className={`btn ${yScale === "linear" ? "btn-primary" : ""}`}
+            onClick={() => setYScale("linear")}
+          >
+            Linear
+          </button>
+          <button className={`btn ${yScale === "log" ? "btn-primary" : ""}`} onClick={() => setYScale("log")}>
+            Log
+          </button>
+        </div>
+
+        <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+          <span className="control-label">Fields</span>
+          {availableFields.map((f) => (
+            <label key={f.id} className="row field-toggle" style={{ gap: 6, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={!!selected[f.id]}
+                onChange={(e) => setSelected((s) => ({ ...s, [f.id]: e.target.checked }))}
+              />
+              <span
+                style={{ width: 10, height: 10, borderRadius: "50%", background: f.color, display: "inline-block" }}
+              />
+              <span className="small">{f.name}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
-      <div className="row" style={{ gap: 8, marginBottom: 14 }}>
-        <span className="small muted">Y-axis scale</span>
-        <button
-          className={`btn ${yScale === "linear" ? "btn-primary" : ""}`}
-          onClick={() => setYScale("linear")}
-        >
-          Linear
-        </button>
-        <button className={`btn ${yScale === "log" ? "btn-primary" : ""}`} onClick={() => setYScale("log")}>
-          Log
-        </button>
-      </div>
-
-      <div className="row" style={{ gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
-        {availableFields.map((f) => (
-          <label key={f.id} className="row" style={{ gap: 6, cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              checked={!!selected[f.id]}
-              onChange={(e) => setSelected((s) => ({ ...s, [f.id]: e.target.checked }))}
-            />
-            <span
-              style={{ width: 10, height: 10, borderRadius: "50%", background: f.color, display: "inline-block" }}
-            />
-            <span className="small">{f.name}</span>
-          </label>
-        ))}
-      </div>
-
-      <div className="card">
+      <div className="card chart-card">
         {metrics.loading ? (
           <p className="muted">Loading…</p>
         ) : (

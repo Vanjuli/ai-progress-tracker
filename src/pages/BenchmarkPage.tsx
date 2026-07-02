@@ -83,7 +83,7 @@ export function BenchmarkPage() {
         </div>
       </section>
 
-      <div className="card">
+      <div className="card chart-card">
         <div className="stack" style={{ gap: 6, marginBottom: 12 }}>
           <h2 style={{ margin: 0 }}>{b.name} score over time</h2>
           <p className="muted" style={{ margin: 0 }}>{b.description}</p>
@@ -107,38 +107,40 @@ export function BenchmarkPage() {
         ) : all.length === 0 ? (
           <p className="muted">No data yet.</p>
         ) : (
-          <table className="data">
-            <thead>
-              <tr>
-                <th>Model</th>
-                <th>Organization</th>
-                <th>{metricLabel(b.unit, b.higher_is_better)}</th>
-                <th>Date (year)</th>
-                <th>Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...all]
-                .sort((a, c) => c.achieved_on.localeCompare(a.achieved_on))
-                .map((p) => (
-                  <tr key={p.id}>
-                    <td>{p.model_name}</td>
-                    <td className="muted">{p.organization ?? "—"}</td>
-                    <td>{formatScore(p.score, b.unit)}</td>
-                    <td className="muted">{formatMonthYear(p.achieved_on)}</td>
-                    <td>
-                      {p.source_url ? (
-                        <a href={p.source_url} target="_blank" rel="noreferrer">
-                          link ↗
-                        </a>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+          <div className="data-table-scroll">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Organization</th>
+                  <th>{metricLabel(b.unit, b.higher_is_better)}</th>
+                  <th>Date (year)</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...all]
+                  .sort((a, c) => c.achieved_on.localeCompare(a.achieved_on))
+                  .map((p) => (
+                    <tr key={p.id}>
+                      <td>{p.model_name}</td>
+                      <td className="muted">{p.organization ?? "—"}</td>
+                      <td>{formatScore(p.score, b.unit)}</td>
+                      <td className="muted">{formatMonthYear(p.achieved_on)}</td>
+                      <td>
+                        {p.source_url ? (
+                          <a href={p.source_url} target="_blank" rel="noreferrer">
+                            link ↗
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
         )}
         <p className="small muted" style={{ marginTop: 12 }}>
           Showing curated verified data points only. Check the linked sources for methodology
