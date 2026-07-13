@@ -51,9 +51,8 @@ export function MultiLineChart({ fields, metrics, valueFormatter, height = 360, 
       : {};
 
   return (
-    <div className="chart-scroll">
-      <div className="chart-min" style={{ height }}>
-        <ResponsiveContainer width="100%" height="100%">
+    <div style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
           <LineChart data={rows} margin={{ top: 8, right: 18, bottom: 8, left: 8 }}>
         <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
         <XAxis
@@ -94,9 +93,8 @@ export function MultiLineChart({ fields, metrics, valueFormatter, height = 360, 
             isAnimationActive={false}
           />
         ))}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }

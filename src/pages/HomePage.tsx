@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAsync } from "../lib/useAsync";
 import { BenchmarkCard } from "../components/BenchmarkCard";
+import { ChartModal } from "../components/ChartModal";
 import { FieldOverviewCard } from "../components/FieldOverviewCard";
 import { StackedMarketChart } from "../components/StackedMarketChart";
 import { TrendStat } from "../components/TrendStat";
@@ -25,6 +26,8 @@ export function HomePage() {
   const metrics = useAsync(() => api.getFieldMetrics(), []);
   const articles = useAsync(() => api.getArticles(12), []);
   const [selectedTopic, setSelectedTopic] = useState("All topics");
+  const [showAllArticles, setShowAllArticles] = useState(false);
+  const [marketChartOpen, setMarketChartOpen] = useState(false);
 
   const fieldList = fields.data ?? [];
   const metricList = metrics.data ?? [];
@@ -70,6 +73,21 @@ export function HomePage() {
     { category: "research", label: "Research", articles: filteredArticles.filter((article) => article.category === "research") },
     { category: "official", label: "Official", articles: filteredArticles.filter((article) => article.category === "official") },
   ];
+  // Filtering by topic counts as "looking for more", so it expands the list.
+  const articlesExpanded = showAllArticles || selectedTopic !== "All topics";
+  // Four picks spanning the categories: the freshest of each, then next best overall.
+  const recommendedArticles = useMemo(() => {
+    const picks: Article[] = [];
+    for (const category of ["trending", "research", "official"] as const) {
+      const first = articleList.find((article) => article.category === category);
+      if (first) picks.push(first);
+    }
+    for (const article of articleList) {
+      if (picks.length >= 4) break;
+      if (!picks.includes(article)) picks.push(article);
+    }
+    return picks.slice(0, 4);
+  }, [articleList]);
 
   return (
     <>
@@ -129,13 +147,35 @@ export function HomePage() {
               />
             </div>
 
-            <div className="card" style={{ marginTop: 18 }}>
+            <div
+              className="card chart-clickable"
+              style={{ marginTop: 18 }}
+              role="button"
+              tabIndex={0}
+              aria-label="Enlarge market value chart"
+              onClick={() => setMarketChartOpen(true)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setMarketChartOpen(true);
+                }
+              }}
+            >
               <div className="row between">
                 <h3 style={{ margin: 0 }}>Market value by field over time</h3>
-                <span className="small muted">USD billions · market size through the current year (Grand View Research)</span>
+                <span className="small muted">Click to enlarge</span>
               </div>
-              <StackedMarketChart fields={fieldList} metrics={metricList} height={300} />
+              <StackedMarketChart fields={fieldList} metrics={metricList} height={190} />
             </div>
+            {marketChartOpen && (
+              <ChartModal
+                title="Market value by field over time"
+                subtitle="USD billions · market size through the current year (Grand View Research)"
+                onClose={() => setMarketChartOpen(false)}
+              >
+                <StackedMarketChart fields={fieldList} metrics={metricList} height={460} />
+              </ChartModal>
+            )}
           </>
         )}
       </section>
@@ -162,26 +202,52 @@ export function HomePage() {
           <p className="muted">Loading latest articles…</p>
         ) : articles.error ? (
           <p className="error">Failed to load latest articles: {articles.error}</p>
+        ) : !articlesExpanded ? (
+          <>
+            <div className="article-grid">
+              {recommendedArticles.map((article) => (
+                <ArticleCard key={article.id} article={article} />
+              ))}
+            </div>
+            <div className="row" style={{ justifyContent: "center", marginTop: 16 }}>
+              <button className="btn" onClick={() => setShowAllArticles(true)}>
+                More articles
+              </button>
+            </div>
+          </>
         ) : (
-          <div className="article-groups">
-            {articleGroups.map((group) => (
-              <div key={group.category} className="article-group">
-                <div className="row between article-group-heading">
-                  <h3>{group.label}</h3>
-                  <span className="small muted">{group.articles.length} shown</span>
-                </div>
-                {group.articles.length > 0 ? (
-                  <div className="article-grid">
-                    {group.articles.map((article) => (
-                      <ArticleCard key={article.id} article={article} />
-                    ))}
+          <>
+            <div className="article-groups">
+              {articleGroups.map((group) => (
+                <div key={group.category} className="article-group">
+                  <div className="row between article-group-heading">
+                    <h3>{group.label}</h3>
+                    <span className="small muted">{group.articles.length} shown</span>
                   </div>
-                ) : (
-                  <p className="muted small">No {group.label.toLowerCase()} articles match this topic.</p>
-                )}
-              </div>
-            ))}
-          </div>
+                  {group.articles.length > 0 ? (
+                    <div className="article-grid">
+                      {group.articles.map((article) => (
+                        <ArticleCard key={article.id} article={article} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="muted small">No {group.label.toLowerCase()} articles match this topic.</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="row" style={{ justifyContent: "center", marginTop: 16 }}>
+              <button
+                className="btn"
+                onClick={() => {
+                  setShowAllArticles(false);
+                  setSelectedTopic("All topics");
+                }}
+              >
+                Show fewer
+              </button>
+            </div>
+          </>
         )}
       </section>
 
