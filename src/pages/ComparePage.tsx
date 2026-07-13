@@ -118,7 +118,7 @@ export function ComparePage() {
         )}
         <p className="small muted" style={{ marginTop: 8 }}>
           {metricKey === "market_value"
-            ? "Market figures come from separate industry research reports with differing scope definitions, so cross-field comparisons are approximate. Values from ~2026 on are forecasts."
+            ? "Market figures come from separate industry research reports with differing scope definitions, so cross-field comparisons are approximate. Future forecast years are not shown; the current-year value is the report's estimate for the year in progress."
             : "Popularity values are annual arXiv submission counts per field category. Current-year points are YTD / year to date (in progress)."}
         </p>
       </div>

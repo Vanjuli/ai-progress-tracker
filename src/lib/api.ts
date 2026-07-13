@@ -3,6 +3,7 @@
 
 import { supabase } from "./supabaseClient";
 import { isConfigured } from "./config";
+import { excludeForecasts } from "./metrics";
 import { Article, AsrRanking, Benchmark, DataPoint, Field, FieldMetric } from "./types";
 import {
   demoArticles,
@@ -39,7 +40,7 @@ class DemoApi implements Api {
   }
 
   async getFieldMetrics(): Promise<FieldMetric[]> {
-    return [...demoFieldMetrics];
+    return excludeForecasts(demoFieldMetrics);
   }
 
   async getFieldBySlug(slug: string): Promise<Field | null> {
@@ -100,7 +101,7 @@ class SupabaseApi implements Api {
       .eq("status", "verified")
       .order("period");
     if (error) throw error;
-    return data as FieldMetric[];
+    return excludeForecasts(data as FieldMetric[]);
   }
 
   async getFieldBySlug(slug: string): Promise<Field | null> {
@@ -135,13 +136,25 @@ class SupabaseApi implements Api {
   }
 
   async getArticles(limitPerCategory = 5): Promise<Article[]> {
-    const { data, error } = await this.db
-      .from("articles")
-      .select("*")
-      .order("published_at", { ascending: false, nullsFirst: false })
-      .limit(limitPerCategory * 3);
-    if (error) throw error;
-    return limitArticlesByCategory((data ?? []).map(normalizeArticle) as Article[], limitPerCategory);
+    // One query per category so a prolific category (e.g. daily arXiv research)
+    // cannot crowd the others out of the shared recency window.
+    const categories: Array<Article["category"]> = ["trending", "research", "official"];
+    const results = await Promise.all(
+      categories.map((category) =>
+        this.db
+          .from("articles")
+          .select("*")
+          .eq("category", category)
+          .order("published_at", { ascending: false, nullsFirst: false })
+          .limit(limitPerCategory)
+      )
+    );
+    const articles: Article[] = [];
+    for (const { data, error } of results) {
+      if (error) throw error;
+      articles.push(...((data ?? []) as Article[]).map(normalizeArticle));
+    }
+    return limitArticlesByCategory(articles, limitPerCategory);
   }
 
   async getAsrRankings(limit = 20): Promise<AsrRanking[]> {

@@ -6,6 +6,8 @@ import {
   startYear,
   sumByPeriod,
   cagrPct,
+  excludeForecasts,
+  isForecastPeriod,
   isYearToDate,
   logScaleDomain,
   logScaleValue,
@@ -75,6 +77,31 @@ describe("series helpers", () => {
 
     expect(growthPct(withPartialYear)).toBe(-20);
     expect(growthPct(withPartialYear, { excludeYearToDate: true, now })).toBe(100);
+  });
+
+  it("flags only future calendar years as forecasts", () => {
+    const now = new Date("2026-07-13T12:00:00Z");
+
+    expect(isForecastPeriod("2027-01-01", now)).toBe(true);
+    expect(isForecastPeriod("2030-01-01", now)).toBe(true);
+    expect(isForecastPeriod("2026-12-31", now)).toBe(false); // current year stays
+    expect(isForecastPeriod("2024-01-01", now)).toBe(false);
+    expect(isForecastPeriod("not-a-date", now)).toBe(false);
+  });
+
+  it("drops forecast-year points so series stop at the current point in time", () => {
+    const now = new Date("2026-07-13T12:00:00Z");
+    const metrics = [
+      { period: "2024-01-01", value: 59.7 },
+      { period: "2026-01-01", value: 116.2 },
+      { period: "2028-01-01", value: 226.0 },
+      { period: "2030-01-01", value: 439.85 },
+    ];
+
+    expect(excludeForecasts(metrics, now)).toEqual([
+      { period: "2024-01-01", value: 59.7 },
+      { period: "2026-01-01", value: 116.2 },
+    ]);
   });
 
   it("prepares values and a positive domain for log-scale charts", () => {

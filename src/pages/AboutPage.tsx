@@ -24,8 +24,9 @@ export function AboutPage() {
         The frontend is read-only. Benchmark rows are curated from linked public sources,
         and benchmark coverage is automatically supplemented from Epoch AI where available.
         Field popularity is automatically collected from arXiv category counts. Market-value
-        figures come from Grand View Research reports, with intermediate forecast years
-        interpolated where noted.
+        figures come from Grand View Research reports, with intermediate years interpolated
+        where noted; future forecast years are excluded from the charts, so every series
+        stops at the current point in time.
       </p>
 
       <h2>Popularity & market value</h2>

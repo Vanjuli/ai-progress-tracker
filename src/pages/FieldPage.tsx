@@ -134,7 +134,7 @@ export function FieldPage() {
               )}
               {marketSource && (
                 <span className="small muted">
-                  Market size &amp; forecast ·{" "}
+                  Market size through the current year ·{" "}
                   <a href={marketSource} target="_blank" rel="noreferrer">
                     Grand View Research ↗
                   </a>
@@ -143,7 +143,7 @@ export function FieldPage() {
             </div>
           </div>
           <p className="small muted" style={{ marginTop: 8 }}>
-            Market value: Grand View Research (size &amp; forecast). Popularity: annual
+            Market value: Grand View Research, shown through the current year only. Popularity: annual
             arXiv submissions in the field's main category — a research-activity proxy.
             See the <Link to="/about">About</Link> page for source details.
           </p>

@@ -41,10 +41,18 @@ export function FieldOverviewCard({ field, metrics }: { field: Field; metrics: F
           </span>
         </div>
       </div>
-      <MetricArea series={pop} color={field.color} height={68} compact markYearToDate />
-      <span className="small muted">
-        Usage trend since {since ?? "—"}{popLatestYtd ? " · current year YTD" : ""}
-      </span>
+      {pop.length > 0 ? (
+        <>
+          <MetricArea series={pop} color={field.color} height={68} compact markYearToDate />
+          <span className="small muted">
+            Usage trend since {since}{popLatestYtd ? " · current year YTD" : ""}
+          </span>
+        </>
+      ) : (
+        <span className="small muted">
+          No distinct market segment or arXiv category — progress is tracked via benchmarks.
+        </span>
+      )}
     </Link>
   );
 }
