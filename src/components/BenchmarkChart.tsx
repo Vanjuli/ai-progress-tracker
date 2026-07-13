@@ -69,9 +69,8 @@ export function BenchmarkChart({ points, unit, higherIsBetter, color, height = 2
       <div className="small muted">
         Score over time by year · {metricExplanation(unit, higherIsBetter)}
       </div>
-      <div className="chart-scroll">
-        <div className="chart-min" style={{ height }}>
-          <ResponsiveContainer width="100%" height="100%">
+      <div style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
             <LineChart data={rows} margin={{ top: 8, right: 18, bottom: 26, left: 0 }}>
           <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
           <XAxis
@@ -104,9 +103,8 @@ export function BenchmarkChart({ points, unit, higherIsBetter, color, height = 2
                 activeDot={{ r: 5 }}
                 isAnimationActive={false}
               />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
