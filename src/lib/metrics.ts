@@ -42,6 +42,18 @@ export function isYearToDate(period: string, now = new Date()): boolean {
   return date.getUTCFullYear() === now.getUTCFullYear();
 }
 
+/** True when a yearly metric period lies in a future calendar year (a forecast). */
+export function isForecastPeriod(period: string, now = new Date()): boolean {
+  const date = new Date(period);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getUTCFullYear() > now.getUTCFullYear();
+}
+
+/** Drop forecast-year points so charts and stats stop at the current point in time. */
+export function excludeForecasts<T extends { period: string }>(items: T[], now = new Date()): T[] {
+  return items.filter((item) => !isForecastPeriod(item.period, now));
+}
+
 /** Recharts log scales can only plot finite positive numbers. */
 export function logScaleValue(value: number | null | undefined): number | null {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;

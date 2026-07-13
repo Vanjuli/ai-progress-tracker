@@ -22,6 +22,10 @@ export function StackedMarketChart({ fields, metrics, height = 300 }: Props) {
   const market = metrics.filter((m) => m.metric_key === "market_value");
   if (market.length === 0) return <p className="muted small">No market data.</p>;
 
+  // Fields without a distinct market segment (e.g. Mathematics) would otherwise
+  // render as misleading $0 bands in the stack and legend.
+  const marketFields = fields.filter((f) => market.some((m) => m.field_id === f.id));
+
   const years = Array.from(new Set(market.map((m) => yearOf(m.period)))).sort((a, b) => a - b);
 
   const valueAt = (fieldId: string, year: number): number =>
@@ -29,7 +33,7 @@ export function StackedMarketChart({ fields, metrics, height = 300 }: Props) {
 
   const rows = years.map((year) => {
     const row: Record<string, number> = { year };
-    for (const f of fields) row[f.slug] = valueAt(f.id, year);
+    for (const f of marketFields) row[f.slug] = valueAt(f.id, year);
     return row;
   });
 
@@ -54,7 +58,7 @@ export function StackedMarketChart({ fields, metrics, height = 300 }: Props) {
           formatter={(value: number, name: string) => [formatUsdBillions(value), name]}
         />
         <Legend wrapperStyle={{ color: "var(--text-dim)", fontSize: 12 }} />
-        {fields.map((f) => (
+        {marketFields.map((f) => (
           <Area
             key={f.id}
             type="monotone"

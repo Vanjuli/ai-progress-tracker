@@ -23,7 +23,7 @@ export function HomePage() {
   const fields = useAsync(() => api.getFields(), []);
   const benchmarks = useAsync(() => api.getAllBenchmarks(), []);
   const metrics = useAsync(() => api.getFieldMetrics(), []);
-  const articles = useAsync(() => api.getArticles(4), []);
+  const articles = useAsync(() => api.getArticles(12), []);
   const [selectedTopic, setSelectedTopic] = useState("All topics");
 
   const fieldList = fields.data ?? [];
@@ -132,7 +132,7 @@ export function HomePage() {
             <div className="card" style={{ marginTop: 18 }}>
               <div className="row between">
                 <h3 style={{ margin: 0 }}>Market value by field over time</h3>
-                <span className="small muted">USD billions · market size &amp; forecast (Grand View Research)</span>
+                <span className="small muted">USD billions · market size through the current year (Grand View Research)</span>
               </div>
               <StackedMarketChart fields={fieldList} metrics={metricList} height={300} />
             </div>
