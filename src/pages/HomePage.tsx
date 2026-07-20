@@ -328,11 +328,11 @@ function ArticleCard({ article }: { article: Article }) {
           ))}
         </div>
       )}
-      {article.summary && <p className="muted small">{article.summary}</p>}
+      {article.summary && <p className="muted small article-summary">{article.summary}</p>}
       <div className="small muted article-meta">
-        <span>{article.author || article.source}</span>
-        <span>·</span>
-        <span>{dateLabel}</span>
+        <span>
+          {article.author || article.source} · {dateLabel}
+        </span>
       </div>
     </a>
   );

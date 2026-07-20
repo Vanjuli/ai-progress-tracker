@@ -13,9 +13,9 @@ export function ThoughtCard({ entry }: { entry: FoodForThoughtEntry }) {
         <strong>Where AI could help:</strong> {entry.aiAngle}
       </p>
       <div className="small muted article-meta">
-        <span>{entry.source}</span>
-        <span>·</span>
-        <span>{entry.year} data</span>
+        <span>
+          {entry.source} · {entry.year} data
+        </span>
       </div>
     </a>
   );

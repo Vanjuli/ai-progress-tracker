@@ -96,6 +96,7 @@ h2,
 h3 {
   line-height: 1.2;
   margin: 0 0 0.4em;
+  text-wrap: balance;
 }
 
 .container {
@@ -403,6 +404,14 @@ input[type="checkbox"] {
 .article-card p {
   margin: 0;
 }
+/* Collected summaries can be arbitrarily long (arXiv abstracts); cap them so one
+   article can't stretch the whole grid row. */
+.article-summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .article-meta {
   margin-top: auto;
   display: flex;
@@ -466,8 +475,9 @@ input[type="checkbox"] {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
-  border-left: 3px solid var(--accent);
-  padding-left: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.08);
 }
 
 .chart-clickable {
