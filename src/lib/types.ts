@@ -57,6 +57,19 @@ export interface AsrRanking {
   collected_at: string;
 }
 
+// Hand-curated "Food for thought" entries; data lives in src/lib/foodForThought.ts, not the database.
+export interface FoodForThoughtEntry {
+  id: string;
+  title: string;
+  topic: string;
+  stat: string;
+  summary: string;
+  aiAngle: string;
+  source: string;
+  sourceUrl: string;
+  year: number;
+}
+
 export interface Article {
   id: string;
   title: string;

@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const SITE_URL = "https://aiprogresstracker.org";
-export const STATIC_ROUTES = ["/", "/compare", "/about"];
+export const STATIC_ROUTES = ["/", "/compare", "/food-for-thought", "/about"];
 
 function clean(value) {
   return typeof value === "string" ? value.replace(/^\uFEFF/, "").trim() : "";

@@ -23,6 +23,7 @@ export function Header() {
             Dashboard
           </NavLink>
           <NavLink to="/compare">Compare</NavLink>
+          <NavLink to="/food-for-thought">Food for Thought</NavLink>
           <NavLink to="/about">About</NavLink>
         </nav>
         <div className="header-right">

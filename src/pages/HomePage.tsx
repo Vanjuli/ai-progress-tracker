@@ -8,6 +8,8 @@ import { FieldOverviewCard } from "../components/FieldOverviewCard";
 import { StackedMarketChart } from "../components/StackedMarketChart";
 import { TrendStat } from "../components/TrendStat";
 import { Article, Field } from "../lib/types";
+import { foodForThought } from "../lib/foodForThought";
+import { ThoughtCard } from "../components/ThoughtCard";
 import {
   fieldSeries,
   growthPct,
@@ -277,6 +279,24 @@ export function HomePage() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="section">
+        <h2>Food for thought</h2>
+        <p className="muted" style={{ marginTop: -4 }}>
+          Beyond benchmarks: hard numbers on global problems that are still unsolved — and
+          where AI could plausibly help. Hand-curated from primary sources.
+        </p>
+        <div className="grid">
+          {foodForThought.slice(0, 3).map((entry) => (
+            <ThoughtCard key={entry.id} entry={entry} />
+          ))}
+        </div>
+        <div className="row" style={{ justifyContent: "center", marginTop: 16 }}>
+          <Link className="btn" to="/food-for-thought">
+            All food for thought
+          </Link>
+        </div>
       </section>
     </>
   );
