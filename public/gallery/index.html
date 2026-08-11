@@ -2,11 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <title>Art Gallery — AI Progress Tracker</title>
   <meta name="description" content="A walkable 3D art gallery." />
   <style>
-    html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0d10; }
+    html, body {
+      margin: 0; height: 100%; overflow: hidden; background: #0d0d10;
+      touch-action: none; overscroll-behavior: none;
+      -webkit-user-select: none; user-select: none;
+    }
     canvas { display: block; }
     #hud {
       position: fixed; left: 16px; bottom: 14px;
@@ -37,11 +41,34 @@
       text-decoration: none;
     }
     #back:hover { color: #fff; background: rgba(10, 10, 14, 0.8); }
+    #joystick {
+      position: fixed; left: 22px; bottom: 22px;
+      width: 124px; height: 124px; border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      display: none; touch-action: none; z-index: 10;
+    }
+    #stick {
+      position: absolute; left: 50%; top: 50%;
+      width: 52px; height: 52px; border-radius: 50%;
+      margin: -26px 0 0 -26px;
+      background: rgba(255, 255, 255, 0.35);
+      pointer-events: none;
+    }
+    #hud .touch { display: none; }
+    @media (hover: none) and (pointer: coarse) {
+      #joystick { display: block; }
+      #hud .kbd { display: none; }
+      #hud .touch { display: inline; }
+      #hud { left: auto; right: 16px; bottom: 22px; max-width: min(48vw, 260px); }
+      #caption { bottom: 164px; }
+    }
   </style>
 </head>
 <body>
   <a id="back" href="/">← AI Progress Tracker</a>
-  <div id="hud"><b>WASD</b> / arrows — walk &nbsp;·&nbsp; <b>Shift</b> — run &nbsp;·&nbsp; <b>drag mouse</b> — look &nbsp;·&nbsp; <b>scroll</b> — zoom</div>
+  <div id="hud"><span class="kbd"><b>WASD</b> / arrows — walk &nbsp;·&nbsp; <b>Shift</b> — run &nbsp;·&nbsp; <b>drag mouse</b> — look &nbsp;·&nbsp; <b>scroll</b> — zoom</span><span class="touch"><b>joystick</b> — walk, push to rim to run &nbsp;·&nbsp; <b>drag</b> — look &nbsp;·&nbsp; <b>pinch</b> — zoom</span></div>
+  <div id="joystick"><div id="stick"></div></div>
   <div id="caption"></div>
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }

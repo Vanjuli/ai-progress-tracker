@@ -346,18 +346,61 @@ addEventListener('keydown', e => keys[e.code] = true);
 addEventListener('keyup', e => keys[e.code] = false);
 
 let yaw = 0, pitch = 0.25, camDist = 5;
-let dragging = false, lastX = 0, lastY = 0;
-renderer.domElement.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
-addEventListener('pointerup', () => dragging = false);
-addEventListener('pointermove', e => {
-  if (!dragging) return;
-  yaw -= (e.clientX - lastX) * 0.005;
-  pitch = Math.min(1.2, Math.max(-0.1, pitch + (e.clientY - lastY) * 0.005));
-  lastX = e.clientX; lastY = e.clientY;
+
+// look: drag with the mouse or one finger; two fingers pinch to zoom
+const lookPointers = new Map();
+renderer.domElement.addEventListener('pointerdown', e => {
+  lookPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 });
+addEventListener('pointermove', e => {
+  const p = lookPointers.get(e.pointerId);
+  if (!p) return;
+  if (lookPointers.size === 2) {
+    const [a, b] = [...lookPointers.values()];
+    const before = Math.hypot(a.x - b.x, a.y - b.y);
+    p.x = e.clientX; p.y = e.clientY;
+    const after = Math.hypot(a.x - b.x, a.y - b.y);
+    camDist = Math.min(10, Math.max(0.8, camDist + (before - after) * 0.02));
+  } else {
+    yaw -= (e.clientX - p.x) * 0.005;
+    pitch = Math.min(1.2, Math.max(-0.1, pitch + (e.clientY - p.y) * 0.005));
+    p.x = e.clientX; p.y = e.clientY;
+  }
+});
+addEventListener('pointerup', e => lookPointers.delete(e.pointerId));
+addEventListener('pointercancel', e => lookPointers.delete(e.pointerId));
 addEventListener('wheel', e => {
   camDist = Math.min(10, Math.max(0.8, camDist + e.deltaY * 0.003));
 });
+
+// touch joystick (visible only on coarse-pointer devices, see index.html)
+const joyEl = document.getElementById('joystick');
+const stickEl = document.getElementById('stick');
+let joyX = 0, joyY = 0, joyId = null;
+if (joyEl) {
+  const setStick = (dx, dy) => { stickEl.style.transform = `translate(${dx * 34}px, ${dy * 34}px)`; };
+  const updateJoy = e => {
+    const r = joyEl.getBoundingClientRect();
+    let dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+    let dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+    const m = Math.hypot(dx, dy);
+    if (m > 1) { dx /= m; dy /= m; }
+    joyX = dx; joyY = dy;
+    setStick(dx, dy);
+  };
+  joyEl.addEventListener('pointerdown', e => {
+    joyId = e.pointerId;
+    joyEl.setPointerCapture(e.pointerId);
+    updateJoy(e);
+  });
+  joyEl.addEventListener('pointermove', e => { if (e.pointerId === joyId) updateJoy(e); });
+  const endJoy = e => {
+    if (e.pointerId !== joyId) return;
+    joyId = null; joyX = 0; joyY = 0; setStick(0, 0);
+  };
+  joyEl.addEventListener('pointerup', endJoy);
+  joyEl.addEventListener('pointercancel', endJoy);
+}
 
 // ---------- caption ----------
 const captionEl = document.getElementById('caption');
@@ -373,10 +416,16 @@ function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.05);
 
-  const forward = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
-  const strafe = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
-  const moving = forward !== 0 || strafe !== 0;
-  const running = keys.ShiftLeft || keys.ShiftRight;
+  let forward = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
+  let strafe = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
+  let running = keys.ShiftLeft || keys.ShiftRight;
+  const joyMag = Math.hypot(joyX, joyY);
+  if (joyMag > 0.15) {
+    forward = -joyY;
+    strafe = joyX;
+    if (joyMag > 0.95) running = true; // stick pushed to the rim
+  }
+  const moving = Math.abs(forward) > 0.01 || Math.abs(strafe) > 0.01;
   const speed = running ? 5.2 : 2.6;
 
   if (moving) {
