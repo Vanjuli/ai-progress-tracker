@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Art Gallery — AI Progress Tracker</title>
+  <meta name="description" content="A walkable 3D art gallery." />
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0d10; }
+    canvas { display: block; }
+    #hud {
+      position: fixed; left: 16px; bottom: 14px;
+      color: rgba(255, 255, 255, 0.75);
+      font: 13px/1.5 system-ui, sans-serif;
+      background: rgba(10, 10, 14, 0.55);
+      padding: 10px 14px; border-radius: 10px;
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+      user-select: none;
+    }
+    #hud b { color: #fff; }
+    #caption {
+      position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+      color: #fff; font: 15px system-ui, sans-serif;
+      background: rgba(10, 10, 14, 0.65);
+      padding: 8px 18px; border-radius: 999px;
+      opacity: 0; transition: opacity 0.25s;
+      pointer-events: none; white-space: nowrap;
+    }
+    #back {
+      position: fixed; left: 16px; top: 14px;
+      color: rgba(255, 255, 255, 0.85);
+      font: 13px system-ui, sans-serif;
+      background: rgba(10, 10, 14, 0.55);
+      padding: 8px 14px; border-radius: 999px;
+      backdrop-filter: blur(6px);
+      text-decoration: none;
+    }
+    #back:hover { color: #fff; background: rgba(10, 10, 14, 0.8); }
+  </style>
+</head>
+<body>
+  <a id="back" href="/">← AI Progress Tracker</a>
+  <div id="hud"><b>WASD</b> / arrows — walk &nbsp;·&nbsp; <b>Shift</b> — run &nbsp;·&nbsp; <b>drag mouse</b> — look &nbsp;·&nbsp; <b>scroll</b> — zoom</div>
+  <div id="caption"></div>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+  </script>
+  <script type="module" src="/gallery/main.js"></script>
+</body>
+</html>
