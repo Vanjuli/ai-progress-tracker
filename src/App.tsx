@@ -15,9 +15,6 @@ const AboutPage = lazy(() => import("./pages/AboutPage").then((m) => ({ default:
 const ComparePage = lazy(() =>
   import("./pages/ComparePage").then((m) => ({ default: m.ComparePage }))
 );
-const FoodForThoughtPage = lazy(() =>
-  import("./pages/FoodForThoughtPage").then((m) => ({ default: m.FoodForThoughtPage }))
-);
 
 export default function App() {
   return (
@@ -31,7 +28,6 @@ export default function App() {
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/benchmark/:slug" element={<BenchmarkPage />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/food-for-thought" element={<FoodForThoughtPage />} />
             <Route path="*" element={<p className="section">Page not found.</p>} />
           </Routes>
         </Suspense>
