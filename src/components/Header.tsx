@@ -23,9 +23,6 @@ export function Header() {
             Dashboard
           </NavLink>
           <NavLink to="/compare">Compare</NavLink>
-          <NavLink to="/food-for-thought">Food for Thought</NavLink>
-          {/* Static page outside the SPA router (public/gallery/), so a plain anchor */}
-          <a href="/gallery/">Art Gallery</a>
           <NavLink to="/about">About</NavLink>
         </nav>
         <div className="header-right">
